@@ -1,1 +1,898 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Story Validator · Lean Agile Ninja</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f4ef;
+  --surface: #ffffff;
+  --surface2: #eeede7;
+  --border: #d8d6ce;
+  --accent: #fadd10;
+  --accent-dark: #c9b000;
+  --ink: #1a1a18;
+  --muted: #7a7870;
+  --pass: #2d8a4e;
+  --pass-bg: #eaf7ef;
+  --warn: #b85c00;
+  --warn-bg: #fff4e8;
+  --fail: #c0392b;
+  --fail-bg: #fdf0ef;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── Layout ── */
+.app { display: grid; grid-template-columns: 380px 1fr; min-height: 100vh; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+}
+
+/* ── Left panel ── */
+.panel-left {
+  background: var(--ink);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .panel-left { position: static; height: auto; }
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-mark {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px; color: #000;
+}
+
+.logo-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: 0.3px;
+}
+
+.logo-text span { color: var(--accent); display: block; font-size: 10px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; }
+
+h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+}
+
+h2 em { color: var(--accent); font-style: normal; }
+
+label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #888;
+  display: block;
+  margin-bottom: 8px;
+  font-family: 'DM Mono', monospace;
+}
+
+.api-input-wrap { position: relative; }
+.api-input-wrap input {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.api-input-wrap input:focus { border-color: var(--accent); }
+.api-input-wrap input::placeholder { color: #555; }
+
+textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  color: #e8e8e0;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 14px;
+  resize: vertical;
+  min-height: 200px;
+  outline: none;
+  line-height: 1.7;
+  transition: border-color 0.2s;
+}
+textarea:focus { border-color: var(--accent); }
+textarea::placeholder { color: #555; }
+
+.hint {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #666;
+  line-height: 1.6;
+  margin-top: -8px;
+}
+
+.options-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #aaa;
+  transition: color 0.2s;
+}
+.toggle:hover { color: #fff; }
+.toggle input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+
+.btn-analyze {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius);
+  padding: 14px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-analyze:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(250,221,16,0.3); }
+.btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── Right panel ── */
+.panel-right {
+  padding: 40px 36px;
+  overflow-y: auto;
+}
+
+@media (max-width: 600px) { .panel-right { padding: 24px 16px; } }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  color: var(--muted);
+  gap: 16px;
+}
+
+.empty-icon {
+  font-size: 56px;
+  opacity: 0.4;
+}
+
+.empty-state p {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 300px;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 20px;
+}
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading p {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+/* ── Results ── */
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.results-header h3 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.summary-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.pill.pass { background: var(--pass-bg); color: var(--pass); border: 1px solid #b8dfc8; }
+.pill.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid #f5c99a; }
+.pill.fail { background: var(--fail-bg); color: var(--fail); border: 1px solid #f0b8b4; }
+
+/* Story card */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  animation: cardIn 0.4s cubic-bezier(.22,1,.36,1) both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.story-card-header {
+  padding: 18px 22px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.story-number {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.story-text-preview {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  flex: 1;
+  color: var(--ink);
+}
+
+.overall-badge {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.overall-badge.DOBRA,
+.overall-badge.GOTOWA { background: var(--pass-bg); color: var(--pass); }
+.overall-badge.WYMAGA_POPRAWEK { background: var(--warn-bg); color: var(--warn); }
+.overall-badge.ODRZUCONA { background: var(--fail-bg); color: var(--fail); }
+
+/* INVEST grid */
+.invest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 600px) {
+  .invest-grid { grid-template-columns: repeat(2,1fr); }
+}
+
+.invest-cell {
+  background: var(--surface);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.invest-letter {
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.invest-name {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+.invest-score {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.score-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot.filled-pass { background: var(--pass); }
+.dot.filled-warn { background: #f5a623; }
+.dot.filled-fail { background: var(--fail); }
+
+.invest-comment {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Story body */
+.story-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.suggestion-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.suggestion-list li {
+  font-size: 13px;
+  line-height: 1.6;
+  padding-left: 18px;
+  position: relative;
+  color: var(--ink);
+}
+
+.suggestion-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent-dark);
+  font-family: 'DM Mono', monospace;
+}
+
+.improved-story {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+  border-left: 3px solid var(--accent);
+}
+
+/* ── Story Map ── */
+.map-section {
+  margin-top: 48px;
+}
+
+.map-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.map-subtitle {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+
+.story-map-scroll {
+  overflow-x: auto;
+  padding-bottom: 16px;
+}
+
+.story-map {
+  display: flex;
+  gap: 2px;
+  min-width: max-content;
+}
+
+.map-epic-col { display: flex; flex-direction: column; gap: 2px; }
+
+.map-epic {
+  background: var(--ink);
+  color: var(--accent);
+  border-radius: 8px 8px 0 0;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  min-width: 200px;
+  text-align: center;
+}
+
+.map-feature {
+  background: #2e2e42;
+  color: #ccc;
+  padding: 8px 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  min-width: 200px;
+}
+
+.map-stories { display: flex; flex-direction: column; gap: 2px; }
+
+.map-story {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  min-width: 200px;
+  max-width: 220px;
+  position: relative;
+}
+
+.map-story-badge {
+  position: absolute;
+  top: 6px; right: 8px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.map-story-badge.pass { background: var(--pass); }
+.map-story-badge.warn { background: #f5a623; }
+.map-story-badge.fail { background: var(--fail); }
+
+/* error box */
+.error-box {
+  background: var(--fail-bg);
+  border: 1px solid #f0b8b4;
+  border-radius: 10px;
+  padding: 20px;
+  color: var(--fail);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── LEFT PANEL ── -->
+  <aside class="panel-left">
+    <div class="logo">
+      <div class="logo-mark">N</div>
+      <div class="logo-text">Lean Agile Ninja <span>Story Validator</span></div>
+    </div>
+
+    <h2>Walidator<br><em>Historyjek</em><br>Użytkownika</h2>
+
+    <div>
+      <label>Klucz API Anthropic</label>
+      <div class="api-input-wrap">
+        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+      </div>
+    </div>
+
+    <div>
+      <label>Historyjki użytkownika</label>
+      <textarea id="storiesInput" placeholder="Wklej historyjki, po jednej na linię lub oddzielone pustą linią:
+
+Jako klient chcę móc filtrować produkty po kategorii, aby szybko znaleźć to czego szukam.
+
+Jako admin chcę zobaczyć raport sprzedaży za ostatni miesiąc.
+
+Jako użytkownik chcę logować się przez Google."></textarea>
+      <p class="hint">Każda historyjka to osobna linia lub akapit.</p>
+    </div>
+
+    <div>
+      <label>Opcje analizy</label>
+      <div class="options-row">
+        <label class="toggle">
+          <input type="checkbox" id="optINVEST" checked>
+          INVEST
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="optSMART" checked>
+          SMART
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="optMap">
+          Story Map
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="optFix" checked>
+          Sugestia poprawki
+        </label>
+      </div>
+    </div>
+
+    <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+      Analizuj historyjki →
+    </button>
+
+    <p class="hint" style="margin-top:auto">Klucz API nie jest wysyłany nigdzie poza api.anthropic.com. Aplikacja działa w całości w przeglądarce.</p>
+  </aside>
+
+  <!-- ── RIGHT PANEL ── -->
+  <main class="panel-right" id="mainPanel">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">📋</div>
+      <p>Wklej historyjki użytkownika po lewej stronie i kliknij <strong>Analizuj</strong>, aby ocenić je pod kątem INVEST / SMART.</p>
+    </div>
+  </main>
+
+</div>
+
+<script>
+// ── Parse stories from input ──────────────────────────────────────
+function parseStories(raw) {
+  const byBlankLine = raw.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+  if (byBlankLine.length > 1) return byBlankLine;
+  return raw.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+// ── Build prompt ──────────────────────────────────────────────────
+function buildPrompt(stories, opts) {
+  const criteria = [];
+  if (opts.invest) criteria.push('INVEST (Independent, Negotiable, Valuable, Estimable, Small, Testable)');
+  if (opts.smart) criteria.push('SMART (Specific, Measurable, Achievable, Relevant, Time-bound)');
+
+  const mapPart = opts.map ? `
+Dodatkowo wygeneruj Story Map jako JSON w kluczu "storyMap":
+{
+  "epics": [
+    {
+      "name": "Nazwa epiku",
+      "features": [
+        {
+          "name": "Nazwa feature",
+          "stories": [0, 2]  // indeksy historyjek (0-based) należących do tej grupy
+        }
+      ]
+    }
+  ]
+}` : '';
+
+  const fixPart = opts.fix ? 'Dla każdej historyjki podaj "improved": poprawioną wersję historyjki w języku polskim.' : '';
+
+  return `Jesteś ekspertem Agile i Kanban. Przeanalizuj poniższe historyjki użytkownika pod kątem kryteriów: ${criteria.join(' oraz ')}.
+
+Historyjki (indeksy 0-based):
+${stories.map((s,i) => `[${i}] ${s}`).join('\n')}
+
+Odpowiedz TYLKO JSON (bez markdown, bez komentarzy), w formacie:
+{
+  "stories": [
+    {
+      "index": 0,
+      "overall": "DOBRA" | "WYMAGA_POPRAWEK" | "ODRZUCONA",
+      "invest": {
+        "I": { "score": 1-3, "comment": "krótki komentarz po polsku" },
+        "N": { "score": 1-3, "comment": "..." },
+        "V": { "score": 1-3, "comment": "..." },
+        "E": { "score": 1-3, "comment": "..." },
+        "S": { "score": 1-3, "comment": "..." },
+        "T": { "score": 1-3, "comment": "..." }
+      },
+      "smart": {
+        "S": { "score": 1-3, "comment": "..." },
+        "M": { "score": 1-3, "comment": "..." },
+        "A": { "score": 1-3, "comment": "..." },
+        "R": { "score": 1-3, "comment": "..." },
+        "T": { "score": 1-3, "comment": "..." }
+      },
+      "suggestions": ["sugestia 1", "sugestia 2"],
+      "improved": "poprawiona historyjka"
+    }
+  ]${opts.map ? ',\n  "storyMap": {}' : ''}
+}
+
+Zasady oceniania score: 3=spełnia w pełni, 2=częściowo, 1=nie spełnia.
+${mapPart}
+${fixPart}
+Odpowiedz wyłącznie JSON.`;
+}
+
+// ── Score → color class ───────────────────────────────────────────
+function scoreClass(s) {
+  if (s >= 3) return 'filled-pass';
+  if (s >= 2) return 'filled-warn';
+  return 'filled-fail';
+}
+
+function overallClass(o) {
+  if (o === 'DOBRA' || o === 'GOTOWA') return 'DOBRA';
+  if (o === 'WYMAGA_POPRAWEK') return 'WYMAGA_POPRAWEK';
+  return 'ODRZUCONA';
+}
+
+function overallLabel(o) {
+  return { DOBRA:'✓ Dobra', GOTOWA:'✓ Gotowa', WYMAGA_POPRAWEK:'⚠ Wymaga poprawek', ODRZUCONA:'✗ Odrzucona' }[o] || o;
+}
+
+// ── Render dots ───────────────────────────────────────────────────
+function renderDots(score) {
+  return [1,2,3].map(i =>
+    `<div class="dot ${i <= score ? scoreClass(score) : ''}"></div>`
+  ).join('');
+}
+
+// ── Render INVEST block ───────────────────────────────────────────
+const INVEST_NAMES = { I:'Independent', N:'Negotiable', V:'Valuable', E:'Estimable', S:'Small', T:'Testable' };
+const SMART_NAMES  = { S:'Specific', M:'Measurable', A:'Achievable', R:'Relevant', T:'Time-bound' };
+
+function renderCriteriaGrid(data, names, opts) {
+  if (!data) return '';
+  return `<div class="invest-grid">
+    ${Object.entries(data).map(([k,v]) => `
+      <div class="invest-cell">
+        <div class="invest-letter">${k}</div>
+        <div class="invest-name">${names[k] || k}</div>
+        <div class="invest-score">
+          <div class="score-dots">${renderDots(v.score)}</div>
+        </div>
+        <div class="invest-comment">${v.comment}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+// ── Render story card ─────────────────────────────────────────────
+function renderCard(s, stories, opts, idx) {
+  const oc = overallClass(s.overall);
+  const investGrid = opts.invest ? renderCriteriaGrid(s.invest, INVEST_NAMES, opts) : '';
+  const smartGrid  = opts.smart  ? renderCriteriaGrid(s.smart,  SMART_NAMES,  opts) : '';
+
+  const suggestions = s.suggestions && s.suggestions.length
+    ? `<div>
+        <div class="section-label">Sugestie poprawek</div>
+        <ul class="suggestion-list">
+          ${s.suggestions.map(sg => `<li>${sg}</li>`).join('')}
+        </ul>
+       </div>` : '';
+
+  const improved = opts.fix && s.improved
+    ? `<div>
+        <div class="section-label">Proponowana historyjka</div>
+        <div class="improved-story">${s.improved}</div>
+       </div>` : '';
+
+  return `
+  <div class="story-card" style="animation-delay:${idx*60}ms">
+    <div class="story-card-header">
+      <div class="story-number">#${s.index + 1}</div>
+      <div class="story-text-preview">${stories[s.index] || ''}</div>
+      <div class="overall-badge ${oc}">${overallLabel(s.overall)}</div>
+    </div>
+    ${investGrid}
+    ${smartGrid ? (investGrid ? '' : '') + smartGrid : ''}
+    <div class="story-body">
+      ${suggestions}
+      ${improved}
+    </div>
+  </div>`;
+}
+
+// ── Render Story Map ──────────────────────────────────────────────
+function renderMap(storyMap, stories, results) {
+  if (!storyMap || !storyMap.epics) return '';
+
+  const qualityOf = (idx) => {
+    const r = results.find(r => r.index === idx);
+    if (!r) return 'warn';
+    if (r.overall === 'DOBRA' || r.overall === 'GOTOWA') return 'pass';
+    if (r.overall === 'ODRZUCONA') return 'fail';
+    return 'warn';
+  };
+
+  const cols = storyMap.epics.map(epic => {
+    const features = (epic.features || []).map(feat => {
+      const storyCards = (feat.stories || []).map(idx => `
+        <div class="map-story">
+          <div class="map-story-badge ${qualityOf(idx)}"></div>
+          ${stories[idx] ? stories[idx].substring(0,80) + (stories[idx].length > 80 ? '…':'') : ''}
+        </div>`).join('');
+      return `<div class="map-feature">${feat.name}</div>
+              <div class="map-stories">${storyCards}</div>`;
+    }).join('');
+    return `<div class="map-epic-col">
+      <div class="map-epic">${epic.name}</div>
+      ${features}
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="map-section">
+    <div class="map-title">Story Map</div>
+    <div class="map-subtitle">Wizualne grupowanie historyjek wg epików i funkcjonalności. Kropka = jakość historyjki.</div>
+    <div class="story-map-scroll">
+      <div class="story-map">${cols}</div>
+    </div>
+  </div>`;
+}
+
+// ── Main analyze function ─────────────────────────────────────────
+async function analyze() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const raw    = document.getElementById('storiesInput').value.trim();
+  const opts   = {
+    invest: document.getElementById('optINVEST').checked,
+    smart:  document.getElementById('optSMART').checked,
+    map:    document.getElementById('optMap').checked,
+    fix:    document.getElementById('optFix').checked,
+  };
+
+  if (!apiKey) { alert('Podaj klucz API Anthropic.'); return; }
+  if (!raw)    { alert('Wklej co najmniej jedną historyjkę.'); return; }
+  if (!opts.invest && !opts.smart) { alert('Wybierz co najmniej jedno kryterium (INVEST lub SMART).'); return; }
+
+  const stories = parseStories(raw);
+  if (!stories.length) { alert('Nie znaleziono historyjek.'); return; }
+
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = 'Analizuję…';
+
+  const panel = document.getElementById('mainPanel');
+  panel.innerHTML = `<div class="loading">
+    <div class="spinner"></div>
+    <p>Analizuję ${stories.length} historyjek przez Claude…</p>
+  </div>`;
+
+  try {
+    const prompt = buildPrompt(stories, opts);
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      throw new Error('Nie udało się przetworzyć odpowiedzi AI. Spróbuj ponownie.');
+    }
+
+    const results = parsed.stories || [];
+    const storyMap = parsed.storyMap;
+
+    // Summary counts
+    const good = results.filter(r => r.overall === 'DOBRA' || r.overall === 'GOTOWA').length;
+    const warn = results.filter(r => r.overall === 'WYMAGA_POPRAWEK').length;
+    const bad  = results.filter(r => r.overall === 'ODRZUCONA').length;
+
+    const pills = [
+      good ? `<span class="pill pass">✓ ${good} dobr${good===1?'a':'e'}</span>` : '',
+      warn ? `<span class="pill warn">⚠ ${warn} do poprawki</span>` : '',
+      bad  ? `<span class="pill fail">✗ ${bad} odrzucon${bad===1?'a':'e'}</span>` : '',
+    ].filter(Boolean).join('');
+
+    const cards = results.map((s,i) => renderCard(s, stories, opts, i)).join('');
+    const mapHtml = opts.map ? renderMap(storyMap, stories, results) : '';
+
+    panel.innerHTML = `
+      <div class="results-header">
+        <h3>Wyniki analizy <span style="color:var(--muted);font-weight:400;font-size:16px">(${stories.length} historyjek)</span></h3>
+        <div class="summary-pills">${pills}</div>
+      </div>
+      ${cards}
+      ${mapHtml}
+    `;
+
+  } catch(err) {
+    panel.innerHTML = `
+      <div class="error-box">
+        <strong>Błąd analizy:</strong><br>${err.message}
+      </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Analizuj historyjki →';
+  }
+}
+
+// Enter in textarea → Ctrl+Enter submits
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
 
