@@ -548,6 +548,13 @@ textarea::placeholder { color: #555; }
       <div class="api-input-wrap">
         <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+        <label class="toggle" style="margin:0">
+          <input type="checkbox" id="rememberKey">
+          Zapamiętaj klucz
+        </label>
+        <button onclick="forgetKey()" style="background:none;border:none;color:#666;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:1px;padding:0" title="Usuń zapisany klucz">✕ zapomnij</button>
+      </div>
     </div>
 
     <div>
@@ -602,6 +609,54 @@ Jako użytkownik chcę logować się przez Google."></textarea>
 </div>
 
 <script>
+// ── localStorage: klucz API ───────────────────────────────────────
+const KEY_STORE = 'lan_story_api_key';
+
+function loadSavedKey() {
+  const saved = localStorage.getItem(KEY_STORE);
+  if (saved) {
+    document.getElementById('apiKey').value = saved;
+    document.getElementById('rememberKey').checked = true;
+    showKeyStatus(true);
+  }
+}
+
+function showKeyStatus(saved) {
+  const btn = document.querySelector('button[onclick="forgetKey()"]');
+  btn.style.color = saved ? '#4af0c4' : '#666';
+  btn.textContent = saved ? '✓ zapisany' : '✕ zapomnij';
+}
+
+function forgetKey() {
+  localStorage.removeItem(KEY_STORE);
+  document.getElementById('apiKey').value = '';
+  document.getElementById('rememberKey').checked = false;
+  showKeyStatus(false);
+}
+
+document.getElementById('rememberKey').addEventListener('change', function() {
+  const key = document.getElementById('apiKey').value.trim();
+  if (this.checked && key) {
+    localStorage.setItem(KEY_STORE, key);
+    showKeyStatus(true);
+  } else {
+    localStorage.removeItem(KEY_STORE);
+    showKeyStatus(false);
+  }
+});
+
+document.getElementById('apiKey').addEventListener('input', function() {
+  if (document.getElementById('rememberKey').checked) {
+    if (this.value.trim()) {
+      localStorage.setItem(KEY_STORE, this.value.trim());
+    } else {
+      localStorage.removeItem(KEY_STORE);
+    }
+  }
+});
+
+loadSavedKey();
+
 // ── Parse stories from input ──────────────────────────────────────
 function parseStories(raw) {
   const byBlankLine = raw.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
@@ -801,6 +856,10 @@ async function analyze() {
   };
 
   if (!apiKey) { alert('Podaj klucz API Anthropic.'); return; }
+  if (document.getElementById('rememberKey').checked) {
+    localStorage.setItem(KEY_STORE, apiKey);
+    showKeyStatus(true);
+  }
   if (!raw)    { alert('Wklej co najmniej jedną historyjkę.'); return; }
   if (!opts.invest && !opts.smart) { alert('Wybierz co najmniej jedno kryterium (INVEST lub SMART).'); return; }
 
@@ -895,4 +954,3 @@ document.addEventListener('keydown', e => {
 </script>
 </body>
 </html>
-
