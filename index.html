@@ -3,882 +3,1632 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>User Story Validator · Lean Agile Ninja</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>Story Map Builder · Lean Agile Ninja</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* ═══════════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════════ */
 :root {
-  --bg: #f5f4ef;
-  --surface: #ffffff;
-  --surface2: #eeede7;
-  --border: #d8d6ce;
-  --accent: #fadd10;
-  --accent-dark: #c9b000;
-  --ink: #1a1a18;
-  --muted: #7a7870;
-  --pass: #2d8a4e;
-  --pass-bg: #eaf7ef;
-  --warn: #b85c00;
-  --warn-bg: #fff4e8;
-  --fail: #c0392b;
-  --fail-bg: #fdf0ef;
-  --radius: 10px;
+  --bg:        #faf9f6;
+  --bg2:       #f2f0eb;
+  --bg3:       #e8e5de;
+  --ink:       #1c1b18;
+  --ink2:      #4a4840;
+  --ink3:      #8a8680;
+  --border:    #d6d2c8;
+  --border2:   #c4bfb4;
+  --accent:    #fadd10;
+  --accent-d:  #c9b000;
+  --accent-bg: #fffde6;
+  --pass:      #1a7a42;
+  --pass-bg:   #edf7f2;
+  --pass-bd:   #a8d9bc;
+  --warn:      #a05000;
+  --warn-bg:   #fff5e8;
+  --warn-bd:   #f5c98a;
+  --fail:      #b52a2a;
+  --fail-bg:   #fdf0f0;
+  --fail-bd:   #f0b4b4;
+  --actor-1:   #e8f4ff;
+  --actor-2:   #f0e8ff;
+  --actor-3:   #e8fff0;
+  --actor-4:   #fff8e8;
+  --r:         8px;
+  --r-lg:      14px;
+  --shadow:    0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
+/* ═══════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
 body {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Fraunces', Georgia, serif;
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
+  line-height: 1.5;
 }
 
-/* ── Layout ── */
-.app { display: grid; grid-template-columns: 380px 1fr; min-height: 100vh; }
-
-@media (max-width: 900px) {
-  .app { grid-template-columns: 1fr; }
+/* ═══════════════════════════════════════════════════
+   LAYOUT SHELL
+═══════════════════════════════════════════════════ */
+.shell {
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  min-height: 100vh;
 }
 
-/* ── Left panel ── */
-.panel-left {
+/* ── Top Bar ── */
+.topbar {
   background: var(--ink);
-  padding: 32px 28px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  padding: 0 28px;
   gap: 24px;
   position: sticky;
   top: 0;
-  height: 100vh;
-  overflow-y: auto;
+  z-index: 100;
 }
 
-@media (max-width: 900px) {
-  .panel-left { position: static; height: auto; }
-}
-
-.logo {
+.brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
 }
 
-.logo-mark {
-  width: 36px; height: 36px;
+.brand-mark {
+  width: 28px; height: 28px;
   background: var(--accent);
-  border-radius: 6px;
+  border-radius: 5px;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 18px; color: #000;
-}
-
-.logo-text {
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.2;
-  letter-spacing: 0.3px;
-}
-
-.logo-text span { color: var(--accent); display: block; font-size: 10px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; }
-
-h2 {
-  font-size: 24px;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.15;
-}
-
-h2 em { color: var(--accent); font-style: normal; }
-
-label {
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #888;
-  display: block;
-  margin-bottom: 8px;
   font-family: 'DM Mono', monospace;
-}
-
-.api-input-wrap { position: relative; }
-.api-input-wrap input {
-  width: 100%;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: var(--radius);
-  color: #fff;
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  padding: 10px 14px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.api-input-wrap input:focus { border-color: var(--accent); }
-.api-input-wrap input::placeholder { color: #555; }
-
-textarea {
-  width: 100%;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: var(--radius);
-  color: #e8e8e0;
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  padding: 14px;
-  resize: vertical;
-  min-height: 200px;
-  outline: none;
-  line-height: 1.7;
-  transition: border-color 0.2s;
-}
-textarea:focus { border-color: var(--accent); }
-textarea::placeholder { color: #555; }
-
-.hint {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  color: #666;
-  line-height: 1.6;
-  margin-top: -8px;
-}
-
-.options-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  color: #aaa;
-  transition: color 0.2s;
-}
-.toggle:hover { color: #fff; }
-.toggle input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
-
-.btn-analyze {
-  background: var(--accent);
+  font-weight: 500;
+  font-size: 14px;
   color: #000;
-  border: none;
-  border-radius: var(--radius);
-  padding: 14px;
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-  width: 100%;
-  transition: all 0.2s;
-  letter-spacing: 0.3px;
-  position: relative;
-  overflow: hidden;
-}
-.btn-analyze:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(250,221,16,0.3); }
-.btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* ── Right panel ── */
-.panel-right {
-  padding: 40px 36px;
-  overflow-y: auto;
-}
-
-@media (max-width: 600px) { .panel-right { padding: 24px 16px; } }
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 60vh;
-  text-align: center;
-  color: var(--muted);
-  gap: 16px;
-}
-
-.empty-icon {
-  font-size: 56px;
-  opacity: 0.4;
-}
-
-.empty-state p {
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  line-height: 1.7;
-  max-width: 300px;
-}
-
-/* Loading */
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 60vh;
-  gap: 20px;
-}
-
-.spinner {
-  width: 40px; height: 40px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.loading p {
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  color: var(--muted);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
-
-/* ── Results ── */
-.results-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.results-header h3 {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.summary-pills {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.pill {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  letter-spacing: 1px;
-  font-weight: 500;
-}
-
-.pill.pass { background: var(--pass-bg); color: var(--pass); border: 1px solid #b8dfc8; }
-.pill.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid #f5c99a; }
-.pill.fail { background: var(--fail-bg); color: var(--fail); border: 1px solid #f0b8b4; }
-
-/* Story card */
-.story-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  margin-bottom: 20px;
-  overflow: hidden;
-  animation: cardIn 0.4s cubic-bezier(.22,1,.36,1) both;
-}
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.story-card-header {
-  padding: 18px 22px;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.story-number {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  background: var(--ink);
-  color: var(--accent);
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 
-.story-text-preview {
-  font-size: 14px;
+.brand-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #fff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.topbar-title {
+  font-size: 15px;
   font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.topbar-sep { flex: 1; }
+
+.api-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-area input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 6px 12px;
+  width: 240px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.api-area input:focus { border-color: var(--accent); }
+.api-area input::placeholder { color: #666; }
+
+.api-status {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.api-status.saved { background: #1a7a42; color: #fff; }
+.api-status.unsaved { background: rgba(255,255,255,0.1); color: #aaa; }
+
+/* ── Main area: sidebar + content ── */
+.main {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 0;
+}
+
+@media (max-width: 860px) {
+  .main { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════ */
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-section {
+  border-bottom: 1px solid var(--border);
+  padding: 20px;
+}
+
+.sidebar-section:last-child { border-bottom: none; flex: 1; }
+
+.sec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.sec-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+.btn-add {
+  background: var(--accent);
+  border: none;
+  border-radius: 5px;
+  width: 24px; height: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #000;
+  font-weight: 700;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-add:hover { transform: scale(1.1); box-shadow: 0 2px 8px rgba(250,221,16,0.4); }
+
+/* Actor chips */
+.actors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.actor-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.actor-chip:hover { border-color: var(--border2); box-shadow: var(--shadow); }
+.actor-chip.active { border-color: var(--accent-d); background: var(--accent-bg); }
+
+.actor-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.actor-name {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actor-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink3);
+  background: var(--bg2);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.btn-del {
+  background: none;
+  border: none;
+  color: var(--ink3);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+.actor-chip:hover .btn-del { opacity: 1; }
+.btn-del:hover { color: var(--fail); background: var(--fail-bg); }
+
+/* Activities in sidebar */
+.activities-list { display: flex; flex-direction: column; gap: 8px; }
+
+.activity-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.activity-header:hover { background: var(--bg2); }
+
+.activity-toggle {
+  font-size: 10px;
+  color: var(--ink3);
+  transition: transform 0.2s;
+  font-family: 'DM Mono', monospace;
+}
+.activity-item.open .activity-toggle { transform: rotate(90deg); }
+
+.activity-name {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.activity-actor-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.activity-stories {
+  padding: 0 12px 10px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  display: none;
+}
+.activity-item.open .activity-stories { display: flex; }
+
+.story-mini {
+  font-size: 11px;
+  color: var(--ink2);
+  font-family: 'DM Mono', monospace;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--bg2);
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.story-mini:hover { background: var(--accent-bg); }
+
+.story-mini-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.story-mini-dot.pass { background: var(--pass); }
+.story-mini-dot.warn { background: var(--warn); }
+.story-mini-dot.fail { background: var(--fail); }
+.story-mini-dot.none { background: var(--ink3); }
+
+/* ═══════════════════════════════════════════════════
+   CONTENT AREA — TABS
+═══════════════════════════════════════════════════ */
+.content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg);
+  padding: 0 28px;
+  gap: 0;
+}
+
+.tab {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 14px 18px;
+  cursor: pointer;
+  color: var(--ink3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--ink); border-bottom-color: var(--accent-d); }
+
+.tab-content { display: none; flex: 1; overflow-y: auto; padding: 28px; }
+.tab-content.active { display: block; }
+
+/* ═══════════════════════════════════════════════════
+   EDITOR TAB
+═══════════════════════════════════════════════════ */
+.editor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 1100px) { .editor-grid { grid-template-columns: 1fr; } }
+
+.editor-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px;
+}
+
+.editor-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-card h3 .num {
+  width: 24px; height: 24px;
+  background: var(--ink);
+  color: var(--accent);
+  border-radius: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Form elements */
+.field { margin-bottom: 14px; }
+
+.field label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 6px;
+}
+
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent-d);
+  background: var(--bg);
+}
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.field select { cursor: pointer; }
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--accent);
+  border: none;
+  border-radius: var(--r);
+  padding: 10px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary:hover { background: #333; transform: translateY(-1px); box-shadow: var(--shadow); }
+
+.btn-secondary {
+  background: var(--bg2);
+  color: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--border2); background: var(--bg3); }
+
+.btn-danger {
+  background: var(--fail-bg);
+  color: var(--fail);
+  border: 1px solid var(--fail-bd);
+  border-radius: var(--r);
+  padding: 6px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-danger:hover { background: var(--fail); color: #fff; }
+
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+/* Story list in editor */
+.stories-editor-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+.story-editor-item {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s;
+}
+.story-editor-item:hover { border-color: var(--border2); }
+
+.story-editor-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.story-num-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  background: var(--bg3);
+  color: var(--ink3);
+  padding: 2px 7px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.story-text-display {
+  font-size: 13px;
   line-height: 1.5;
   flex: 1;
   color: var(--ink);
 }
 
-.overall-badge {
-  flex-shrink: 0;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 1px;
-}
-
-.overall-badge.DOBRA,
-.overall-badge.GOTOWA { background: var(--pass-bg); color: var(--pass); }
-.overall-badge.WYMAGA_POPRAWEK { background: var(--warn-bg); color: var(--warn); }
-.overall-badge.ODRZUCONA { background: var(--fail-bg); color: var(--fail); }
-
-/* INVEST grid */
-.invest-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-@media (max-width: 600px) {
-  .invest-grid { grid-template-columns: repeat(2,1fr); }
-}
-
-.invest-cell {
-  background: var(--surface);
-  padding: 14px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.invest-letter {
-  font-family: 'DM Mono', monospace;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: 1px;
-}
-
-.invest-name {
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-family: 'DM Mono', monospace;
-}
-
-.invest-score {
+.story-editor-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.invest-mini-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+.invest-mini-badge.pass { background: var(--pass-bg); color: var(--pass); border: 1px solid var(--pass-bd); }
+.invest-mini-badge.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-bd); }
+.invest-mini-badge.fail { background: var(--fail-bg); color: var(--fail); border: 1px solid var(--fail-bd); }
+.invest-mini-badge.none { background: var(--bg3); color: var(--ink3); border: 1px solid var(--border); }
+
+/* ═══════════════════════════════════════════════════
+   VALIDATE TAB
+═══════════════════════════════════════════════════ */
+.validate-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.validate-header h2 { font-size: 22px; font-weight: 600; }
+
+.btn-validate-all {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--r);
+  padding: 12px 24px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-validate-all:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(250,221,16,0.4); }
+.btn-validate-all:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.validation-results { display: flex; flex-direction: column; gap: 16px; }
+
+.val-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  animation: slideUp 0.35s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.val-card-top {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.val-actor-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.val-story-text {
+  font-size: 14px;
+  line-height: 1.6;
+  flex: 1;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.val-overall {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.val-overall.pass { background: var(--pass-bg); color: var(--pass); border: 1px solid var(--pass-bd); }
+.val-overall.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-bd); }
+.val-overall.fail { background: var(--fail-bg); color: var(--fail); border: 1px solid var(--fail-bd); }
+
+/* INVEST grid */
+.invest-row {
+  display: grid;
+  grid-template-columns: repeat(6,1fr);
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 700px) { .invest-row { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 400px) { .invest-row { grid-template-columns: repeat(2,1fr); } }
+
+.invest-cell {
+  padding: 12px 14px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.invest-cell:last-child { border-right: none; }
+
+.ic-letter {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.ic-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+.ic-bar {
+  display: flex;
+  gap: 3px;
   margin-top: 4px;
 }
 
-.score-dots {
-  display: flex;
-  gap: 3px;
+.ic-seg {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--bg3);
 }
+.ic-seg.filled-1 { background: var(--fail); }
+.ic-seg.filled-2 { background: var(--warn); }
+.ic-seg.filled-3 { background: var(--pass); }
 
-.dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--border);
-}
-
-.dot.filled-pass { background: var(--pass); }
-.dot.filled-warn { background: #f5a623; }
-.dot.filled-fail { background: var(--fail); }
-
-.invest-comment {
-  font-size: 12px;
-  color: var(--muted);
+.ic-comment {
+  font-size: 11px;
+  color: var(--ink2);
   line-height: 1.5;
+  margin-top: 2px;
 }
 
-/* Story body */
-.story-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+.val-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
 
-.section-label {
+.suggestions-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.suggestions-list li {
+  font-size: 13px;
+  line-height: 1.6;
+  padding-left: 16px;
+  position: relative;
+  color: var(--ink);
+}
+.suggestions-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent-d);
   font-family: 'DM Mono', monospace;
-  font-size: 10px;
+  font-size: 12px;
+}
+
+.improved-box {
+  background: var(--accent-bg);
+  border-left: 3px solid var(--accent-d);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 12px 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.slabel {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 6px;
+  color: var(--ink3);
+  margin-bottom: 5px;
 }
 
-.suggestion-list {
-  list-style: none;
+/* ═══════════════════════════════════════════════════
+   MAP TAB
+═══════════════════════════════════════════════════ */
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.map-toolbar h2 { font-size: 22px; font-weight: 600; flex: 1; }
+
+.map-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--ink3);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* Map scroll container */
+.map-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 24px;
+}
+
+/* Map backbone */
+.story-map-canvas {
+  min-width: max-content;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Row: actor */
+.map-actor-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 0;
+}
+
+.map-actor-cell {
+  min-width: 180px;
+  padding: 12px 16px;
+  border-right: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-actor-cell:last-child { border-right: none; }
+
+.map-actor-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-actor-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.map-actor-role {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--ink3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Backbone label */
+.backbone-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding: 8px 0 4px;
+}
+
+/* Row: activities */
+.map-activities-row {
+  display: flex;
+  gap: 0;
+  background: var(--ink);
+}
+
+.map-activity-cell {
+  min-width: 180px;
+  padding: 10px 16px;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.map-activity-cell:last-child { border-right: none; }
+
+.map-activity-name {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.map-activity-actor {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Row: stories */
+.map-stories-section {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+
+.map-stories-col {
+  min-width: 180px;
+  padding: 12px 10px;
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
+.map-stories-col:last-child { border-right: none; }
 
-.suggestion-list li {
-  font-size: 13px;
-  line-height: 1.6;
-  padding-left: 18px;
+.map-story-card {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 9px 11px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink);
   position: relative;
-  color: var(--ink);
+  transition: all 0.15s;
+  cursor: default;
 }
+.map-story-card:hover { box-shadow: var(--shadow); border-color: var(--border2); }
 
-.suggestion-list li::before {
-  content: '→';
+.map-story-card::before {
+  content: '';
   position: absolute;
-  left: 0;
-  color: var(--accent-dark);
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--r) var(--r) 0 0;
+}
+.map-story-card.pass::before { background: var(--pass); }
+.map-story-card.warn::before { background: var(--warn); }
+.map-story-card.fail::before { background: var(--fail); }
+.map-story-card.none::before { background: var(--border); }
+
+.map-story-invest {
   font-family: 'DM Mono', monospace;
-}
-
-.improved-story {
-  background: var(--surface2);
-  border-radius: 8px;
-  padding: 14px 16px;
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--ink);
-  border-left: 3px solid var(--accent);
-}
-
-/* ── Story Map ── */
-.map-section {
-  margin-top: 48px;
-}
-
-.map-title {
-  font-size: 20px;
-  font-weight: 800;
-  margin-bottom: 6px;
-}
-
-.map-subtitle {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 28px;
-}
-
-.story-map-scroll {
-  overflow-x: auto;
-  padding-bottom: 16px;
-}
-
-.story-map {
+  font-size: 9px;
+  margin-top: 5px;
   display: flex;
   gap: 2px;
-  min-width: max-content;
 }
 
-.map-epic-col { display: flex; flex-direction: column; gap: 2px; }
+.map-story-invest span {
+  padding: 1px 4px;
+  border-radius: 2px;
+}
 
-.map-epic {
-  background: var(--ink);
-  color: var(--accent);
-  border-radius: 8px 8px 0 0;
-  padding: 10px 16px;
-  font-weight: 700;
-  font-size: 13px;
-  min-width: 200px;
+/* Empty map state */
+.map-empty {
   text-align: center;
-}
-
-.map-feature {
-  background: #2e2e42;
-  color: #ccc;
-  padding: 8px 14px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  min-width: 200px;
-}
-
-.map-stories { display: flex; flex-direction: column; gap: 2px; }
-
-.map-story {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-size: 12px;
-  line-height: 1.5;
-  min-width: 200px;
-  max-width: 220px;
-  position: relative;
-}
-
-.map-story-badge {
-  position: absolute;
-  top: 6px; right: 8px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-}
-.map-story-badge.pass { background: var(--pass); }
-.map-story-badge.warn { background: #f5a623; }
-.map-story-badge.fail { background: var(--fail); }
-
-/* error box */
-.error-box {
-  background: var(--fail-bg);
-  border: 1px solid #f0b8b4;
-  border-radius: 10px;
-  padding: 20px;
-  color: var(--fail);
+  padding: 60px 20px;
+  color: var(--ink3);
   font-family: 'DM Mono', monospace;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.8;
 }
+
+/* ═══════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28,27,24,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(16px);
+  transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+
+.modal h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(0,0,0,0.2);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--ink);
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 12px 18px;
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all 0.3s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-left: 3px solid var(--pass); }
+.toast.error   { border-left: 3px solid var(--fail); }
+
+/* Empty state */
+.empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--ink3);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* Color classes for actor indicators */
+.c0 { background: #3b82f6; }
+.c1 { background: #8b5cf6; }
+.c2 { background: #10b981; }
+.c3 { background: #f59e0b; }
+.c4 { background: #ef4444; }
+.c5 { background: #ec4899; }
+.c6 { background: #06b6d4; }
+.c7 { background: #84cc16; }
+
+.bg0 { background: #eff6ff; color: #1d4ed8; }
+.bg1 { background: #f5f3ff; color: #6d28d9; }
+.bg2 { background: #ecfdf5; color: #065f46; }
+.bg3 { background: #fffbeb; color: #92400e; }
+.bg4 { background: #fef2f2; color: #991b1b; }
+.bg5 { background: #fdf2f8; color: #9d174d; }
+.bg6 { background: #ecfeff; color: #155e75; }
+.bg7 { background: #f7fee7; color: #3f6212; }
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- ── LEFT PANEL ── -->
-  <aside class="panel-left">
-    <div class="logo">
-      <div class="logo-mark">N</div>
-      <div class="logo-text">Lean Agile Ninja <span>Story Validator</span></div>
-    </div>
+<div class="shell">
 
-    <h2>Walidator<br><em>Historyjek</em><br>Użytkownika</h2>
+<!-- ── TOP BAR ── -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">N</div>
+    <div class="brand-name">Lean Agile Ninja</div>
+  </div>
+  <div class="topbar-title">Story Map Builder</div>
+  <div class="topbar-sep"></div>
+  <div class="api-area">
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" oninput="onApiKeyInput()">
+    <div class="api-status unsaved" id="apiStatus" onclick="toggleRemember()">ZAPISZ</div>
+  </div>
+</header>
 
-    <div>
-      <label>Klucz API Anthropic</label>
-      <div class="api-input-wrap">
-        <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off">
+<div class="main">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+
+    <!-- Actors -->
+    <div class="sidebar-section">
+      <div class="sec-header">
+        <span class="sec-title">Aktorzy</span>
+        <button class="btn-add" onclick="openModal('actor')" title="Dodaj aktora">+</button>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
-        <label class="toggle" style="margin:0">
-          <input type="checkbox" id="rememberKey">
-          Zapamiętaj klucz
-        </label>
-        <button onclick="forgetKey()" style="background:none;border:none;color:#666;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:1px;padding:0" title="Usuń zapisany klucz">✕ zapomnij</button>
-      </div>
-    </div>
-
-    <div>
-      <label>Historyjki użytkownika</label>
-      <textarea id="storiesInput" placeholder="Wklej historyjki, po jednej na linię lub oddzielone pustą linią:
-
-Jako klient chcę móc filtrować produkty po kategorii, aby szybko znaleźć to czego szukam.
-
-Jako admin chcę zobaczyć raport sprzedaży za ostatni miesiąc.
-
-Jako użytkownik chcę logować się przez Google."></textarea>
-      <p class="hint">Każda historyjka to osobna linia lub akapit.</p>
-    </div>
-
-    <div>
-      <label>Opcje analizy</label>
-      <div class="options-row">
-        <label class="toggle">
-          <input type="checkbox" id="optINVEST" checked>
-          INVEST
-        </label>
-        <label class="toggle">
-          <input type="checkbox" id="optSMART" checked>
-          SMART
-        </label>
-        <label class="toggle">
-          <input type="checkbox" id="optMap">
-          Story Map
-        </label>
-        <label class="toggle">
-          <input type="checkbox" id="optFix" checked>
-          Sugestia poprawki
-        </label>
+      <div class="actors-list" id="actorsList">
+        <div class="empty">Brak aktorów.<br>Kliknij + aby dodać.</div>
       </div>
     </div>
 
-    <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
-      Analizuj historyjki →
-    </button>
+    <!-- Activities tree -->
+    <div class="sidebar-section">
+      <div class="sec-header">
+        <span class="sec-title">Aktywności</span>
+        <button class="btn-add" onclick="openModal('activity')" title="Dodaj aktywność">+</button>
+      </div>
+      <div class="activities-list" id="activitiesList">
+        <div class="empty">Brak aktywności.</div>
+      </div>
+    </div>
 
-    <p class="hint" style="margin-top:auto">Klucz API nie jest wysyłany nigdzie poza api.anthropic.com. Aplikacja działa w całości w przeglądarce.</p>
   </aside>
 
-  <!-- ── RIGHT PANEL ── -->
-  <main class="panel-right" id="mainPanel">
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">📋</div>
-      <p>Wklej historyjki użytkownika po lewej stronie i kliknij <strong>Analizuj</strong>, aby ocenić je pod kątem INVEST / SMART.</p>
-    </div>
-  </main>
+  <!-- ── CONTENT ── -->
+  <div class="content">
+    <nav class="tabs">
+      <div class="tab active" onclick="switchTab('editor')">Edytor</div>
+      <div class="tab" onclick="switchTab('validate')">Walidacja INVEST</div>
+      <div class="tab" onclick="switchTab('map')">Story Map</div>
+    </nav>
 
+    <!-- EDITOR TAB -->
+    <div class="tab-content active" id="tab-editor">
+      <div class="editor-grid">
+
+        <!-- Add story form -->
+        <div class="editor-card">
+          <h3><span class="num">+</span>Nowa historyjka</h3>
+          <div class="field">
+            <label>Aktywność</label>
+            <select id="storyActivity"></select>
+          </div>
+          <div class="field">
+            <label>Treść historyjki</label>
+            <textarea id="storyText" placeholder="Jako [aktor] chcę [akcja], aby [cel]..." rows="4"></textarea>
+          </div>
+          <div class="row-btns">
+            <button class="btn-primary" onclick="addStory()">Dodaj historyjkę</button>
+          </div>
+        </div>
+
+        <!-- Stories list -->
+        <div class="editor-card">
+          <h3><span class="num">≡</span>Historyjki <span id="storyCountBadge" style="font-size:13px;font-weight:400;color:var(--ink3);font-family:'DM Mono',monospace">(0)</span></h3>
+          <div class="stories-editor-list" id="storiesEditorList">
+            <div class="empty">Brak historyjek.<br>Dodaj pierwszą po lewej.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VALIDATE TAB -->
+    <div class="tab-content" id="tab-validate">
+      <div class="validate-header">
+        <h2>Walidacja INVEST</h2>
+        <button class="btn-validate-all" id="validateBtn" onclick="validateAll()">
+          Analizuj przez Claude →
+        </button>
+      </div>
+      <div class="validation-results" id="validationResults">
+        <div class="empty">Dodaj historyjki w zakładce Edytor, następnie uruchom analizę.</div>
+      </div>
+    </div>
+
+    <!-- MAP TAB -->
+    <div class="tab-content" id="tab-map">
+      <div class="map-toolbar">
+        <h2>Story Map</h2>
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--pass)"></div> Dobra</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div> Wymaga poprawek</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--fail)"></div> Odrzucona</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--border)"></div> Nie oceniona</div>
+        </div>
+      </div>
+      <div class="map-scroll">
+        <div id="storyMapCanvas"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ── MODAL: Add Actor ── -->
+<div class="modal-overlay" id="modal-actor">
+  <div class="modal">
+    <h3>Nowy aktor</h3>
+    <div class="field">
+      <label>Nazwa aktora</label>
+      <input type="text" id="newActorName" placeholder="np. Klient, Administrator, Użytkownik...">
+    </div>
+    <div class="field">
+      <label>Opis (opcjonalnie)</label>
+      <input type="text" id="newActorDesc" placeholder="Rola lub kontekst aktora">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal('actor')">Anuluj</button>
+      <button class="btn-primary" onclick="addActor()">Dodaj aktora</button>
+    </div>
+  </div>
 </div>
 
+<!-- ── MODAL: Add Activity ── -->
+<div class="modal-overlay" id="modal-activity">
+  <div class="modal">
+    <h3>Nowa aktywność</h3>
+    <div class="field">
+      <label>Aktor</label>
+      <select id="newActivityActor"></select>
+    </div>
+    <div class="field">
+      <label>Nazwa aktywności (duży krok)</label>
+      <input type="text" id="newActivityName" placeholder="np. Przeglądanie produktów, Płatność...">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal('activity')">Anuluj</button>
+      <button class="btn-primary" onclick="addActivity()">Dodaj aktywność</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
 <script>
-// ── localStorage: klucz API ───────────────────────────────────────
-const KEY_STORE = 'lan_story_api_key';
+// ════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════
+const KEY_API   = 'lan_smb_apikey';
+const KEY_DATA  = 'lan_smb_data';
 
-function loadSavedKey() {
-  const saved = localStorage.getItem(KEY_STORE);
+let state = {
+  actors:     [],   // { id, name, desc }
+  activities: [],   // { id, actorId, name }
+  stories:    [],   // { id, activityId, text, validation: null | {...} }
+};
+
+let nextId = 1;
+const uid = () => `id${nextId++}`;
+
+const ACTOR_COLORS = ['c0','c1','c2','c3','c4','c5','c6','c7'];
+const ACTOR_BG     = ['bg0','bg1','bg2','bg3','bg4','bg5','bg6','bg7'];
+
+// ════════════════════════════════════════════════════
+// PERSIST
+// ════════════════════════════════════════════════════
+function save() {
+  localStorage.setItem(KEY_DATA, JSON.stringify(state));
+}
+
+function load() {
+  const raw = localStorage.getItem(KEY_DATA);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      state = parsed;
+      // Ensure nextId is higher than any existing
+      const allIds = [...state.actors, ...state.activities, ...state.stories]
+        .map(x => parseInt(x.id.replace('id',''))).filter(Boolean);
+      if (allIds.length) nextId = Math.max(...allIds) + 1;
+    } catch(e) {}
+  }
+}
+
+// ════════════════════════════════════════════════════
+// API KEY
+// ════════════════════════════════════════════════════
+function loadApiKey() {
+  const saved = localStorage.getItem(KEY_API);
   if (saved) {
-    document.getElementById('apiKey').value = saved;
-    document.getElementById('rememberKey').checked = true;
-    showKeyStatus(true);
+    document.getElementById('apiKeyInput').value = saved;
+    document.getElementById('apiStatus').textContent = '✓ ZAPISANY';
+    document.getElementById('apiStatus').className = 'api-status saved';
   }
 }
 
-function showKeyStatus(saved) {
-  const btn = document.querySelector('button[onclick="forgetKey()"]');
-  btn.style.color = saved ? '#4af0c4' : '#666';
-  btn.textContent = saved ? '✓ zapisany' : '✕ zapomnij';
+function onApiKeyInput() {
+  const el = document.getElementById('apiStatus');
+  el.textContent = 'ZAPISZ';
+  el.className = 'api-status unsaved';
 }
 
-function forgetKey() {
-  localStorage.removeItem(KEY_STORE);
-  document.getElementById('apiKey').value = '';
-  document.getElementById('rememberKey').checked = false;
-  showKeyStatus(false);
-}
-
-document.getElementById('rememberKey').addEventListener('change', function() {
-  const key = document.getElementById('apiKey').value.trim();
-  if (this.checked && key) {
-    localStorage.setItem(KEY_STORE, key);
-    showKeyStatus(true);
+function toggleRemember() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const el  = document.getElementById('apiStatus');
+  if (!key) { showToast('Najpierw wpisz klucz API', 'error'); return; }
+  if (el.classList.contains('saved')) {
+    localStorage.removeItem(KEY_API);
+    el.textContent = 'ZAPISZ';
+    el.className = 'api-status unsaved';
+    showToast('Klucz usunięty z pamięci');
   } else {
-    localStorage.removeItem(KEY_STORE);
-    showKeyStatus(false);
+    localStorage.setItem(KEY_API, key);
+    el.textContent = '✓ ZAPISANY';
+    el.className = 'api-status saved';
+    showToast('Klucz zapisany', 'success');
   }
-});
-
-document.getElementById('apiKey').addEventListener('input', function() {
-  if (document.getElementById('rememberKey').checked) {
-    if (this.value.trim()) {
-      localStorage.setItem(KEY_STORE, this.value.trim());
-    } else {
-      localStorage.removeItem(KEY_STORE);
-    }
-  }
-});
-
-loadSavedKey();
-
-// ── Parse stories from input ──────────────────────────────────────
-function parseStories(raw) {
-  const byBlankLine = raw.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
-  if (byBlankLine.length > 1) return byBlankLine;
-  return raw.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-// ── Build prompt ──────────────────────────────────────────────────
-function buildPrompt(stories, opts) {
-  const criteria = [];
-  if (opts.invest) criteria.push('INVEST (Independent, Negotiable, Valuable, Estimable, Small, Testable)');
-  if (opts.smart) criteria.push('SMART (Specific, Measurable, Achievable, Relevant, Time-bound)');
+function getApiKey() {
+  return document.getElementById('apiKeyInput').value.trim();
+}
 
-  const mapPart = opts.map ? `
-Dodatkowo wygeneruj Story Map jako JSON w kluczu "storyMap":
-{
-  "epics": [
-    {
-      "name": "Nazwa epiku",
-      "features": [
-        {
-          "name": "Nazwa feature",
-          "stories": [0, 2]  // indeksy historyjek (0-based) należących do tej grupy
-        }
-      ]
+// ════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════
+function actorColor(actorId) {
+  const idx = state.actors.findIndex(a => a.id === actorId);
+  return ACTOR_COLORS[idx % ACTOR_COLORS.length] || 'c0';
+}
+
+function actorBg(actorId) {
+  const idx = state.actors.findIndex(a => a.id === actorId);
+  return ACTOR_BG[idx % ACTOR_BG.length] || 'bg0';
+}
+
+function actorName(actorId) {
+  return state.actors.find(a => a.id === actorId)?.name || '?';
+}
+
+function activityName(actId) {
+  return state.activities.find(a => a.id === actId)?.name || '?';
+}
+
+function storiesForActivity(actId) {
+  return state.stories.filter(s => s.activityId === actId);
+}
+
+function activitiesForActor(actorId) {
+  return state.activities.filter(a => a.actorId === actorId);
+}
+
+function investClass(v) {
+  if (!v) return 'none';
+  const avg = Object.values(v.invest || {}).reduce((a,b) => a + (b.score||0), 0) / 6;
+  if (avg >= 2.5) return 'pass';
+  if (avg >= 1.7) return 'warn';
+  return 'fail';
+}
+
+function investLabel(v) {
+  const c = investClass(v);
+  if (c === 'none') return ['none','Nie oceniona'];
+  if (c === 'pass') return ['pass','✓ Dobra'];
+  if (c === 'warn') return ['warn','⚠ Poprawki'];
+  return ['fail','✗ Odrzucona'];
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['editor','validate','map'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(t => {
+    t.classList.toggle('active', t.id === 'tab-' + name);
+  });
+  if (name === 'map') renderMap();
+}
+
+// ════════════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════════════
+function openModal(name) {
+  if (name === 'activity') populateActivityActorSelect();
+  document.getElementById('modal-' + name).classList.add('open');
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('#modal-' + name + ' input, #modal-' + name + ' select');
+    if (inputs[0]) inputs[0].focus();
+  }, 100);
+}
+
+function closeModal(name) {
+  document.getElementById('modal-' + name).classList.remove('open');
+  // Clear fields
+  document.querySelectorAll('#modal-' + name + ' input[type=text]').forEach(i => i.value = '');
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => {
+    if (e.target === el) {
+      const name = el.id.replace('modal-','');
+      closeModal(name);
     }
-  ]
-}` : '';
+  });
+});
 
-  const fixPart = opts.fix ? 'Dla każdej historyjki podaj "improved": poprawioną wersję historyjki w języku polskim.' : '';
+// Enter to confirm modals
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(el => {
+      closeModal(el.id.replace('modal-',''));
+    });
+  }
+});
 
-  return `Jesteś ekspertem Agile i Kanban. Przeanalizuj poniższe historyjki użytkownika pod kątem kryteriów: ${criteria.join(' oraz ')}.
+// ════════════════════════════════════════════════════
+// ACTORS
+// ════════════════════════════════════════════════════
+function addActor() {
+  const name = document.getElementById('newActorName').value.trim();
+  if (!name) { showToast('Wpisz nazwę aktora', 'error'); return; }
+  state.actors.push({ id: uid(), name, desc: document.getElementById('newActorDesc').value.trim() });
+  save();
+  closeModal('actor');
+  renderAll();
+  showToast(`Aktor "${name}" dodany`, 'success');
+}
 
-Historyjki (indeksy 0-based):
-${stories.map((s,i) => `[${i}] ${s}`).join('\n')}
+function removeActor(id) {
+  if (!confirm('Usunąć aktora i wszystkie jego aktywności oraz historyjki?')) return;
+  const actIds = state.activities.filter(a => a.actorId === id).map(a => a.id);
+  state.stories    = state.stories.filter(s => !actIds.includes(s.activityId));
+  state.activities = state.activities.filter(a => a.actorId !== id);
+  state.actors     = state.actors.filter(a => a.id !== id);
+  save();
+  renderAll();
+}
 
-Odpowiedz TYLKO JSON (bez markdown, bez komentarzy), w formacie:
+function renderActors() {
+  const el = document.getElementById('actorsList');
+  if (!state.actors.length) {
+    el.innerHTML = '<div class="empty">Brak aktorów.<br>Kliknij + aby dodać.</div>';
+    return;
+  }
+  el.innerHTML = state.actors.map(a => {
+    const actCount = activitiesForActor(a.id).length;
+    const stCount  = state.stories.filter(s => state.activities.find(ac => ac.id === s.activityId && ac.actorId === a.id)).length;
+    return `<div class="actor-chip">
+      <div class="actor-dot ${actorColor(a.id)}"></div>
+      <div>
+        <div class="actor-name">${a.name}</div>
+        ${a.desc ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${a.desc}</div>` : ''}
+      </div>
+      <span class="actor-count">${actCount}·${stCount}</span>
+      <button class="btn-del" onclick="event.stopPropagation();removeActor('${a.id}')" title="Usuń">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════
+// ACTIVITIES
+// ════════════════════════════════════════════════════
+function populateActivityActorSelect() {
+  const sel = document.getElementById('newActivityActor');
+  sel.innerHTML = state.actors.length
+    ? state.actors.map(a => `<option value="${a.id}">${a.name}</option>`).join('')
+    : '<option value="">— najpierw dodaj aktora —</option>';
+}
+
+function addActivity() {
+  const actorId = document.getElementById('newActivityActor').value;
+  const name    = document.getElementById('newActivityName').value.trim();
+  if (!actorId) { showToast('Najpierw dodaj aktora', 'error'); return; }
+  if (!name)    { showToast('Wpisz nazwę aktywności', 'error'); return; }
+  state.activities.push({ id: uid(), actorId, name });
+  save();
+  closeModal('activity');
+  renderAll();
+  showToast(`Aktywność "${name}" dodana`, 'success');
+}
+
+function removeActivity(id) {
+  if (!confirm('Usunąć aktywność i wszystkie jej historyjki?')) return;
+  state.stories    = state.stories.filter(s => s.activityId !== id);
+  state.activities = state.activities.filter(a => a.id !== id);
+  save();
+  renderAll();
+}
+
+function toggleActivity(id) {
+  const el = document.getElementById('act-item-' + id);
+  if (el) el.classList.toggle('open');
+}
+
+function renderActivities() {
+  const el = document.getElementById('activitiesList');
+  if (!state.activities.length) {
+    el.innerHTML = '<div class="empty">Brak aktywności.</div>';
+    return;
+  }
+  el.innerHTML = state.activities.map(act => {
+    const stories = storiesForActivity(act.id);
+    const stHtml = stories.map(s => {
+      const [cls] = investLabel(s.validation);
+      return `<div class="story-mini" onclick="scrollToStory('${s.id}')">
+        <div class="story-mini-dot ${cls}"></div>
+        ${s.text.length > 50 ? s.text.substring(0,50)+'…' : s.text}
+      </div>`;
+    }).join('');
+    const abg = actorBg(act.actorId);
+    return `<div class="activity-item" id="act-item-${act.id}">
+      <div class="activity-header" onclick="toggleActivity('${act.id}')">
+        <span class="activity-toggle">▶</span>
+        <span class="activity-name">${act.name}</span>
+        <span class="activity-actor-tag ${abg}">${actorName(act.actorId)}</span>
+        <button class="btn-del" onclick="event.stopPropagation();removeActivity('${act.id}')" title="Usuń">✕</button>
+      </div>
+      <div class="activity-stories">
+        ${stHtml || '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--ink3);padding:4px 0">Brak historyjek</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════
+// STORIES
+// ════════════════════════════════════════════════════
+function populateStoryActivitySelect() {
+  const sel = document.getElementById('storyActivity');
+  sel.innerHTML = state.activities.length
+    ? state.activities.map(a => `<option value="${a.id}">[${actorName(a.actorId)}] ${a.name}</option>`).join('')
+    : '<option value="">— najpierw dodaj aktywność —</option>';
+}
+
+function addStory() {
+  const activityId = document.getElementById('storyActivity').value;
+  const text       = document.getElementById('storyText').value.trim();
+  if (!activityId) { showToast('Wybierz aktywność', 'error'); return; }
+  if (!text)       { showToast('Wpisz treść historyjki', 'error'); return; }
+  state.stories.push({ id: uid(), activityId, text, validation: null });
+  document.getElementById('storyText').value = '';
+  save();
+  renderAll();
+  showToast('Historyjka dodana', 'success');
+}
+
+function removeStory(id) {
+  state.stories = state.stories.filter(s => s.id !== id);
+  save();
+  renderAll();
+}
+
+function scrollToStory(id) {
+  switchTab('validate');
+  setTimeout(() => {
+    const el = document.getElementById('val-card-' + id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
+
+function renderStoriesEditor() {
+  const el = document.getElementById('storiesEditorList');
+  document.getElementById('storyCountBadge').textContent = `(${state.stories.length})`;
+
+  if (!state.stories.length) {
+    el.innerHTML = '<div class="empty">Brak historyjek.<br>Dodaj pierwszą po lewej.</div>';
+    return;
+  }
+
+  el.innerHTML = state.stories.map((s, i) => {
+    const act  = state.activities.find(a => a.id === s.activityId);
+    const abg  = act ? actorBg(act.actorId) : 'bg0';
+    const [cls, lbl] = investLabel(s.validation);
+    return `<div class="story-editor-item" id="story-item-${s.id}">
+      <div class="story-editor-top">
+        <span class="story-num-badge">#${i+1}</span>
+        <div class="story-text-display">${s.text}</div>
+        <button class="btn-del" style="opacity:1" onclick="removeStory('${s.id}')" title="Usuń">✕</button>
+      </div>
+      <div class="story-editor-meta">
+        ${act ? `<span class="activity-actor-tag ${abg}" style="font-size:9px;padding:2px 6px">${actorName(act.actorId)} · ${act.name}</span>` : ''}
+        <span class="invest-mini-badge ${cls}">${lbl}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════
+// RENDER ALL
+// ════════════════════════════════════════════════════
+function renderAll() {
+  renderActors();
+  renderActivities();
+  populateStoryActivitySelect();
+  renderStoriesEditor();
+}
+
+// ════════════════════════════════════════════════════
+// VALIDATION (INVEST via Claude)
+// ════════════════════════════════════════════════════
+const INVEST_FULL = {
+  I: 'Independent',
+  N: 'Negotiable',
+  V: 'Valuable',
+  E: 'Estimable',
+  S: 'Small',
+  T: 'Testable'
+};
+
+function buildValidationPrompt(stories) {
+  const list = stories.map((s, i) => {
+    const act   = state.activities.find(a => a.id === s.activityId);
+    const actor = act ? actorName(act.actorId) : '?';
+    const activity = act ? act.name : '?';
+    return `[${i}] Aktor: ${actor} | Aktywność: ${activity}\nHistoryjka: ${s.text}`;
+  }).join('\n\n');
+
+  return `Jesteś ekspertem Agile. Przeanalizuj poniższe historyjki użytkownika wyłącznie pod kątem kryteriów INVEST (Independent, Negotiable, Valuable, Estimable, Small, Testable). Weź pod uwagę kontekst aktora i aktywności.
+
+${list}
+
+Odpowiedz TYLKO czystym JSON (zero markdown, zero komentarzy):
 {
   "stories": [
     {
       "index": 0,
       "overall": "DOBRA" | "WYMAGA_POPRAWEK" | "ODRZUCONA",
       "invest": {
-        "I": { "score": 1-3, "comment": "krótki komentarz po polsku" },
+        "I": { "score": 1-3, "comment": "krótki komentarz po polsku max 1 zdanie" },
         "N": { "score": 1-3, "comment": "..." },
         "V": { "score": 1-3, "comment": "..." },
         "E": { "score": 1-3, "comment": "..." },
         "S": { "score": 1-3, "comment": "..." },
         "T": { "score": 1-3, "comment": "..." }
       },
-      "smart": {
-        "S": { "score": 1-3, "comment": "..." },
-        "M": { "score": 1-3, "comment": "..." },
-        "A": { "score": 1-3, "comment": "..." },
-        "R": { "score": 1-3, "comment": "..." },
-        "T": { "score": 1-3, "comment": "..." }
-      },
-      "suggestions": ["sugestia 1", "sugestia 2"],
-      "improved": "poprawiona historyjka"
+      "suggestions": ["konkretna sugestia 1", "sugestia 2"],
+      "improved": "poprawiona wersja historyjki po polsku"
     }
-  ]${opts.map ? ',\n  "storyMap": {}' : ''}
+  ]
 }
 
-Zasady oceniania score: 3=spełnia w pełni, 2=częściowo, 1=nie spełnia.
-${mapPart}
-${fixPart}
-Odpowiedz wyłącznie JSON.`;
+Zasady score: 3=spełnia w pełni, 2=częściowo spełnia, 1=nie spełnia.
+Odpowiedz WYŁĄCZNIE JSON.`;
 }
 
-// ── Score → color class ───────────────────────────────────────────
-function scoreClass(s) {
-  if (s >= 3) return 'filled-pass';
-  if (s >= 2) return 'filled-warn';
-  return 'filled-fail';
-}
+async function validateAll() {
+  const apiKey = getApiKey();
+  if (!apiKey) { showToast('Wpisz klucz API Anthropic', 'error'); return; }
+  if (!state.stories.length) { showToast('Brak historyjek do analizy', 'error'); return; }
 
-function overallClass(o) {
-  if (o === 'DOBRA' || o === 'GOTOWA') return 'DOBRA';
-  if (o === 'WYMAGA_POPRAWEK') return 'WYMAGA_POPRAWEK';
-  return 'ODRZUCONA';
-}
-
-function overallLabel(o) {
-  return { DOBRA:'✓ Dobra', GOTOWA:'✓ Gotowa', WYMAGA_POPRAWEK:'⚠ Wymaga poprawek', ODRZUCONA:'✗ Odrzucona' }[o] || o;
-}
-
-// ── Render dots ───────────────────────────────────────────────────
-function renderDots(score) {
-  return [1,2,3].map(i =>
-    `<div class="dot ${i <= score ? scoreClass(score) : ''}"></div>`
-  ).join('');
-}
-
-// ── Render INVEST block ───────────────────────────────────────────
-const INVEST_NAMES = { I:'Independent', N:'Negotiable', V:'Valuable', E:'Estimable', S:'Small', T:'Testable' };
-const SMART_NAMES  = { S:'Specific', M:'Measurable', A:'Achievable', R:'Relevant', T:'Time-bound' };
-
-function renderCriteriaGrid(data, names, opts) {
-  if (!data) return '';
-  return `<div class="invest-grid">
-    ${Object.entries(data).map(([k,v]) => `
-      <div class="invest-cell">
-        <div class="invest-letter">${k}</div>
-        <div class="invest-name">${names[k] || k}</div>
-        <div class="invest-score">
-          <div class="score-dots">${renderDots(v.score)}</div>
-        </div>
-        <div class="invest-comment">${v.comment}</div>
-      </div>
-    `).join('')}
-  </div>`;
-}
-
-// ── Render story card ─────────────────────────────────────────────
-function renderCard(s, stories, opts, idx) {
-  const oc = overallClass(s.overall);
-  const investGrid = opts.invest ? renderCriteriaGrid(s.invest, INVEST_NAMES, opts) : '';
-  const smartGrid  = opts.smart  ? renderCriteriaGrid(s.smart,  SMART_NAMES,  opts) : '';
-
-  const suggestions = s.suggestions && s.suggestions.length
-    ? `<div>
-        <div class="section-label">Sugestie poprawek</div>
-        <ul class="suggestion-list">
-          ${s.suggestions.map(sg => `<li>${sg}</li>`).join('')}
-        </ul>
-       </div>` : '';
-
-  const improved = opts.fix && s.improved
-    ? `<div>
-        <div class="section-label">Proponowana historyjka</div>
-        <div class="improved-story">${s.improved}</div>
-       </div>` : '';
-
-  return `
-  <div class="story-card" style="animation-delay:${idx*60}ms">
-    <div class="story-card-header">
-      <div class="story-number">#${s.index + 1}</div>
-      <div class="story-text-preview">${stories[s.index] || ''}</div>
-      <div class="overall-badge ${oc}">${overallLabel(s.overall)}</div>
-    </div>
-    ${investGrid}
-    ${smartGrid ? (investGrid ? '' : '') + smartGrid : ''}
-    <div class="story-body">
-      ${suggestions}
-      ${improved}
-    </div>
-  </div>`;
-}
-
-// ── Render Story Map ──────────────────────────────────────────────
-function renderMap(storyMap, stories, results) {
-  if (!storyMap || !storyMap.epics) return '';
-
-  const qualityOf = (idx) => {
-    const r = results.find(r => r.index === idx);
-    if (!r) return 'warn';
-    if (r.overall === 'DOBRA' || r.overall === 'GOTOWA') return 'pass';
-    if (r.overall === 'ODRZUCONA') return 'fail';
-    return 'warn';
-  };
-
-  const cols = storyMap.epics.map(epic => {
-    const features = (epic.features || []).map(feat => {
-      const storyCards = (feat.stories || []).map(idx => `
-        <div class="map-story">
-          <div class="map-story-badge ${qualityOf(idx)}"></div>
-          ${stories[idx] ? stories[idx].substring(0,80) + (stories[idx].length > 80 ? '…':'') : ''}
-        </div>`).join('');
-      return `<div class="map-feature">${feat.name}</div>
-              <div class="map-stories">${storyCards}</div>`;
-    }).join('');
-    return `<div class="map-epic-col">
-      <div class="map-epic">${epic.name}</div>
-      ${features}
-    </div>`;
-  }).join('');
-
-  return `
-  <div class="map-section">
-    <div class="map-title">Story Map</div>
-    <div class="map-subtitle">Wizualne grupowanie historyjek wg epików i funkcjonalności. Kropka = jakość historyjki.</div>
-    <div class="story-map-scroll">
-      <div class="story-map">${cols}</div>
-    </div>
-  </div>`;
-}
-
-// ── Main analyze function ─────────────────────────────────────────
-async function analyze() {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  const raw    = document.getElementById('storiesInput').value.trim();
-  const opts   = {
-    invest: document.getElementById('optINVEST').checked,
-    smart:  document.getElementById('optSMART').checked,
-    map:    document.getElementById('optMap').checked,
-    fix:    document.getElementById('optFix').checked,
-  };
-
-  if (!apiKey) { alert('Podaj klucz API Anthropic.'); return; }
-  if (document.getElementById('rememberKey').checked) {
-    localStorage.setItem(KEY_STORE, apiKey);
-    showKeyStatus(true);
-  }
-  if (!raw)    { alert('Wklej co najmniej jedną historyjkę.'); return; }
-  if (!opts.invest && !opts.smart) { alert('Wybierz co najmniej jedno kryterium (INVEST lub SMART).'); return; }
-
-  const stories = parseStories(raw);
-  if (!stories.length) { alert('Nie znaleziono historyjek.'); return; }
-
-  const btn = document.getElementById('analyzeBtn');
+  const btn = document.getElementById('validateBtn');
   btn.disabled = true;
-  btn.textContent = 'Analizuję…';
+  btn.innerHTML = '<span class="spinner"></span>Analizuję…';
 
-  const panel = document.getElementById('mainPanel');
-  panel.innerHTML = `<div class="loading">
-    <div class="spinner"></div>
-    <p>Analizuję ${stories.length} historyjek przez Claude…</p>
+  const resultsEl = document.getElementById('validationResults');
+  resultsEl.innerHTML = `<div class="empty">
+    <span class="spinner"></span> Analizuję ${state.stories.length} historyjek przez Claude…
   </div>`;
 
   try {
-    const prompt = buildPrompt(stories, opts);
-
+    const prompt = buildValidationPrompt(state.stories);
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -901,56 +1651,197 @@ async function analyze() {
 
     const data = await resp.json();
     const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
-
     let parsed;
     try {
-      const clean = text.replace(/```json|```/g,'').trim();
-      parsed = JSON.parse(clean);
+      parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
     } catch(e) {
-      throw new Error('Nie udało się przetworzyć odpowiedzi AI. Spróbuj ponownie.');
+      throw new Error('Nie udało się przetworzyć odpowiedzi AI.');
     }
 
-    const results = parsed.stories || [];
-    const storyMap = parsed.storyMap;
-
-    // Summary counts
-    const good = results.filter(r => r.overall === 'DOBRA' || r.overall === 'GOTOWA').length;
-    const warn = results.filter(r => r.overall === 'WYMAGA_POPRAWEK').length;
-    const bad  = results.filter(r => r.overall === 'ODRZUCONA').length;
-
-    const pills = [
-      good ? `<span class="pill pass">✓ ${good} dobr${good===1?'a':'e'}</span>` : '',
-      warn ? `<span class="pill warn">⚠ ${warn} do poprawki</span>` : '',
-      bad  ? `<span class="pill fail">✗ ${bad} odrzucon${bad===1?'a':'e'}</span>` : '',
-    ].filter(Boolean).join('');
-
-    const cards = results.map((s,i) => renderCard(s, stories, opts, i)).join('');
-    const mapHtml = opts.map ? renderMap(storyMap, stories, results) : '';
-
-    panel.innerHTML = `
-      <div class="results-header">
-        <h3>Wyniki analizy <span style="color:var(--muted);font-weight:400;font-size:16px">(${stories.length} historyjek)</span></h3>
-        <div class="summary-pills">${pills}</div>
-      </div>
-      ${cards}
-      ${mapHtml}
-    `;
+    // Store validation results
+    parsed.stories.forEach(r => {
+      const story = state.stories[r.index];
+      if (story) story.validation = r;
+    });
+    save();
+    renderAll();
+    renderValidationResults();
+    showToast('Analiza zakończona', 'success');
 
   } catch(err) {
-    panel.innerHTML = `
-      <div class="error-box">
-        <strong>Błąd analizy:</strong><br>${err.message}
-      </div>`;
+    resultsEl.innerHTML = `<div style="background:var(--fail-bg);border:1px solid var(--fail-bd);border-radius:var(--r);padding:20px;color:var(--fail);font-family:'DM Mono',monospace;font-size:13px">${err.message}</div>`;
+    showToast('Błąd analizy', 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Analizuj historyjki →';
+    btn.innerHTML = 'Analizuj przez Claude →';
   }
 }
 
-// Enter in textarea → Ctrl+Enter submits
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyze();
-});
+function renderValidationResults() {
+  const el = document.getElementById('validationResults');
+  if (!state.stories.length) {
+    el.innerHTML = '<div class="empty">Brak historyjek. Dodaj je w zakładce Edytor.</div>';
+    return;
+  }
+
+  const validated = state.stories.filter(s => s.validation);
+  if (!validated.length) {
+    el.innerHTML = '<div class="empty">Kliknij "Analizuj przez Claude" aby ocenić historyjki.</div>';
+    return;
+  }
+
+  el.innerHTML = state.stories.map((s, idx) => {
+    if (!s.validation) return '';
+    const v = s.validation;
+    const act = state.activities.find(a => a.id === s.activityId);
+    const abg = act ? actorBg(act.actorId) : 'bg0';
+    const [oc] = investLabel(s.validation);
+
+    const overallLabels = {
+      DOBRA: ['pass','✓ Dobra'],
+      WYMAGA_POPRAWEK: ['warn','⚠ Wymaga poprawek'],
+      ODRZUCONA: ['fail','✗ Odrzucona']
+    };
+    const [obCls, obLbl] = overallLabels[v.overall] || ['warn','?'];
+
+    // INVEST cells
+    const investHtml = Object.entries(v.invest || {}).map(([k, iv]) => {
+      const filledClass = iv.score >= 3 ? 'filled-3' : iv.score >= 2 ? 'filled-2' : 'filled-1';
+      const bars = [1,2,3].map(i =>
+        `<div class="ic-seg ${i <= iv.score ? filledClass : ''}"></div>`
+      ).join('');
+      return `<div class="invest-cell">
+        <div class="ic-letter">${k}</div>
+        <div class="ic-name">${INVEST_FULL[k]}</div>
+        <div class="ic-bar">${bars}</div>
+        <div class="ic-comment">${iv.comment}</div>
+      </div>`;
+    }).join('');
+
+    const suggestions = v.suggestions?.length
+      ? `<div>
+          <div class="slabel">Sugestie</div>
+          <ul class="suggestions-list">
+            ${v.suggestions.map(sg => `<li>${sg}</li>`).join('')}
+          </ul>
+        </div>` : '';
+
+    const improved = v.improved
+      ? `<div>
+          <div class="slabel">Proponowana historyjka</div>
+          <div class="improved-box">${v.improved}</div>
+        </div>` : '';
+
+    return `<div class="val-card" id="val-card-${s.id}" style="animation-delay:${idx*50}ms">
+      <div class="val-card-top">
+        ${act ? `<span class="val-actor-tag ${abg}">${actorName(act.actorId)} · ${act.name}</span>` : ''}
+        <div class="val-story-text">"${s.text}"</div>
+        <div class="val-overall ${obCls}">${obLbl}</div>
+      </div>
+      <div class="invest-row">${investHtml}</div>
+      <div class="val-body">
+        ${suggestions}
+        ${improved}
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+}
+
+// ════════════════════════════════════════════════════
+// STORY MAP
+// ════════════════════════════════════════════════════
+function renderMap() {
+  const el = document.getElementById('storyMapCanvas');
+
+  if (!state.actors.length) {
+    el.innerHTML = '<div class="map-empty">Dodaj aktorów, aktywności i historyjki,<br>aby zobaczyć Story Map.</div>';
+    return;
+  }
+
+  // Group: per actor → activities → stories
+  // Backbone layout: actors as swim lanes but horizontal
+
+  let html = '';
+
+  // === ROW 1: Actor labels (backbone header) ===
+  const actorCols = state.actors.map(actor => {
+    const activities = activitiesForActor(actor.id);
+    const colWidth   = Math.max(1, activities.length); // how many activity cols this actor spans
+    return { actor, activities, colWidth };
+  });
+
+  // Flatten all activities in order
+  const allActivities = actorCols.flatMap(ac => ac.activities);
+
+  if (!allActivities.length) {
+    el.innerHTML = '<div class="map-empty">Dodaj aktywności aby zobaczyć mapę.</div>';
+    return;
+  }
+
+  // === BACKBONE: Actor row ===
+  html += `<div class="backbone-label">BACKBONE — AKTORZY</div>`;
+  html += `<div class="map-actor-row">`;
+  actorCols.forEach(({ actor, activities }) => {
+    if (!activities.length) return;
+    // span multiple columns if needed — simple: one cell per actor spanning its activities
+    const colSpan = activities.length;
+    html += `<div class="map-actor-cell" style="min-width:${colSpan * 190}px; background:var(--${actorBg(actor.id).replace('bg','bg')});">
+      <div class="map-actor-dot ${actorColor(actor.id)}"></div>
+      <div>
+        <div class="map-actor-name">${actor.name}</div>
+        ${actor.desc ? `<div class="map-actor-role">${actor.desc}</div>` : ''}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // === BACKBONE: Activities row ===
+  html += `<div class="backbone-label" style="margin-top:2px">BACKBONE — AKTYWNOŚCI</div>`;
+  html += `<div class="map-activities-row">`;
+  allActivities.forEach(act => {
+    html += `<div class="map-activity-cell">
+      <div class="map-activity-name">${act.name}</div>
+      <div class="map-activity-actor">${actorName(act.actorId)}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // === STORIES SECTION ===
+  html += `<div class="backbone-label" style="margin-top:2px">HISTORYJKI</div>`;
+  html += `<div class="map-stories-section">`;
+  allActivities.forEach(act => {
+    const stories = storiesForActivity(act.id);
+    const storyCards = stories.length
+      ? stories.map(s => {
+          const [cls] = investLabel(s.validation);
+          const investDots = s.validation
+            ? Object.entries(s.validation.invest || {}).map(([k,v]) => {
+                const dotCls = v.score >= 3 ? 'pass' : v.score >= 2 ? 'warn' : 'fail';
+                const dotColor = { pass: 'var(--pass)', warn: '#f59e0b', fail: 'var(--fail)' }[dotCls];
+                return `<span style="color:${dotColor};font-size:8px" title="${k}: ${v.score}/3">${k}</span>`;
+              }).join('') : '';
+          const shortText = s.text.length > 70 ? s.text.substring(0,70)+'…' : s.text;
+          return `<div class="map-story-card ${cls}" title="${s.text}">
+            ${shortText}
+            ${investDots ? `<div class="map-story-invest">${investDots}</div>` : ''}
+          </div>`;
+        }).join('')
+      : `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);padding:8px 4px;text-align:center">brak historyjek</div>`;
+
+    html += `<div class="map-stories-col">${storyCards}</div>`;
+  });
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════
+load();
+loadApiKey();
+renderAll();
+renderValidationResults();
 </script>
 </body>
 </html>
