@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Myśli — Lean Agile Ninja</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#161a22;
+    --panel-border:#262b36;
+    --text:#eef1f6;
+    --muted:#8a90a0;
+    --accent:#fadd10;
+    --accent-dim:#8a7e0f;
+    --line:#3a4050;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;
+    background:var(--bg);
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    color:var(--text);
+    overflow:hidden;
+  }
+  #toolbar{
+    position:fixed;top:0;left:0;right:0;
+    height:56px;
+    background:var(--panel);
+    border-bottom:1px solid var(--panel-border);
+    display:flex;align-items:center;gap:8px;
+    padding:0 12px;
+    z-index:50;
+    flex-wrap:wrap;
+  }
+  #toolbar .title{
+    font-weight:700;color:var(--accent);
+    margin-right:12px;
+    letter-spacing:.5px;
+    font-size:15px;
+    white-space:nowrap;
+  }
+  button, .btn{
+    background:#1e2330;
+    border:1px solid var(--panel-border);
+    color:var(--text);
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:13px;
+    display:flex;align-items:center;gap:6px;
+    transition:background .15s, border-color .15s;
+  }
+  button:hover{background:#262c3d;border-color:var(--accent-dim);}
+  button.primary{
+    background:var(--accent);
+    color:#111;
+    border-color:var(--accent);
+    font-weight:600;
+  }
+  button.primary:hover{background:#e0c800;}
+  button.danger:hover{border-color:#e05555;color:#ff8080;}
+  input[type=color]{
+    width:34px;height:34px;padding:2px;border-radius:6px;
+    border:1px solid var(--panel-border);background:#1e2330;cursor:pointer;
+  }
+  #canvas-wrap{
+    position:absolute;top:56px;left:0;right:0;bottom:0;
+    overflow:hidden;
+    cursor:grab;
+  }
+  #canvas-wrap.panning{cursor:grabbing;}
+  #world{
+    position:absolute;top:0;left:0;
+    transform-origin:0 0;
+  }
+  svg#links{
+    position:absolute;top:0;left:0;
+    overflow:visible;
+    pointer-events:none;
+  }
+  .node{
+    position:absolute;
+    min-width:60px;
+    max-width:280px;
+    padding:10px 16px;
+    border-radius:10px;
+    background:#1c2130;
+    border:2px solid var(--line);
+    color:var(--text);
+    font-size:14px;
+    line-height:1.35;
+    cursor:pointer;
+    user-select:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.35);
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .node.root{
+    background:var(--accent);
+    color:#141414;
+    border-color:var(--accent);
+    font-weight:700;
+    font-size:16px;
+  }
+  .node.selected{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  .node[contenteditable="true"]{
+    cursor:text;
+    outline:2px solid #6ea8ff;
+  }
+  .node .handle{
+    position:absolute;
+    width:12px;height:12px;
+    background:var(--accent);
+    border-radius:50%;
+    right:-6px;bottom:-6px;
+    cursor:crosshair;
+    border:2px solid #111;
+    opacity:0;
+    transition:opacity .15s;
+  }
+  .node:hover .handle{opacity:1;}
+  #sidepanel{
+    position:fixed;
+    right:0;top:56px;bottom:0;
+    width:220px;
+    background:var(--panel);
+    border-left:1px solid var(--panel-border);
+    padding:14px;
+    font-size:13px;
+    color:var(--muted);
+    z-index:40;
+    display:none;
+  }
+  #sidepanel.open{display:block;}
+  #sidepanel h3{color:var(--text);margin:0 0 10px;font-size:14px;}
+  #sidepanel .row{margin-bottom:14px;display:flex;flex-direction:column;gap:6px;}
+  #sidepanel label{font-size:12px;color:var(--muted);}
+  #sidepanel textarea{
+    width:100%;min-height:60px;
+    background:#0f1115;border:1px solid var(--panel-border);
+    color:var(--text);border-radius:6px;padding:6px;
+    font-family:inherit;font-size:13px;resize:vertical;
+  }
+  #hint{
+    position:fixed;bottom:14px;left:14px;
+    color:var(--muted);font-size:12px;
+    background:rgba(22,26,34,.85);
+    padding:8px 12px;border-radius:8px;
+    border:1px solid var(--panel-border);
+    max-width:340px;
+    z-index:40;
+  }
+  #zoomlabel{color:var(--muted);font-size:12px;min-width:42px;text-align:center;}
+  .spacer{flex:1;}
+  #filename-input{
+    background:#0f1115;border:1px solid var(--panel-border);
+    color:var(--text);padding:7px 10px;border-radius:6px;font-size:13px;width:150px;
+  }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="title">🧠 MAPA MYŚLI</div>
+  <button id="addNodeBtn" class="primary">+ Węzeł</button>
+  <button id="deleteBtn" class="danger">Usuń</button>
+  <input type="color" id="colorPicker" title="Kolor węzła" value="#1c2130">
+  <div class="spacer"></div>
+  <button id="zoomOutBtn">−</button>
+  <div id="zoomlabel">100%</div>
+  <button id="zoomInBtn">+</button>
+  <button id="fitBtn">Dopasuj</button>
+  <div class="spacer"></div>
+  <input id="filename-input" type="text" value="mapa-mysli" title="Nazwa pliku do zapisu">
+  <button id="saveBtn">💾 Zapisz JSON</button>
+  <button id="loadBtn">📂 Wczytaj JSON</button>
+  <input type="file" id="fileInput" accept=".json" style="display:none">
+  <button id="exportPngBtn">🖼 Eksport PNG</button>
+  <button id="clearBtn" class="danger">Wyczyść</button>
+</div>
+
+<div id="canvas-wrap">
+  <div id="world">
+    <svg id="links"></svg>
+    <div id="nodes-layer"></div>
+  </div>
+</div>
+
+<div id="sidepanel">
+  <h3>Właściwości węzła</h3>
+  <div class="row">
+    <label>Tekst</label>
+    <textarea id="panelText"></textarea>
+  </div>
+  <div class="row">
+    <label>Kolor</label>
+    <input type="color" id="panelColor" style="width:100%;height:34px;">
+  </div>
+  <div class="row">
+    <label>Skróty</label>
+    <div style="color:var(--muted);line-height:1.6;">
+      Dwuklik = edycja tekstu<br>
+      Delete = usuń zaznaczony<br>
+      Tab (w edycji) = nowe dziecko<br>
+      Przeciągnij za żółtą kropkę = połącz z innym węzłem
+    </div>
+  </div>
+</div>
+
+<div id="hint">
+  Kliknij <b>+ Węzeł</b> aby dodać, przeciągnij aby przesunąć, dwuklik aby edytować tekst.
+  Scroll = zoom, przeciąganie tła = przesuwanie widoku.
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "mindmap_state_v1";
+
+  let state = {
+    nodes: [],   // {id, x, y, text, color, isRoot}
+    links: [],   // {from, to}
+  };
+  let nextId = 1;
+
+  let selectedId = null;
+  let scale = 1, panX = 0, panY = 0;
+
+  const world = document.getElementById('world');
+  const nodesLayer = document.getElementById('nodes-layer');
+  const svgLinks = document.getElementById('links');
+  const wrap = document.getElementById('canvas-wrap');
+  const sidepanel = document.getElementById('sidepanel');
+  const panelText = document.getElementById('panelText');
+  const panelColor = document.getElementById('panelColor');
+  const zoomlabel = document.getElementById('zoomlabel');
+
+  function uid(){ return 'n' + (nextId++); }
+
+  function loadFromStorage(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed.nodes && parsed.nodes.length){
+          state = parsed;
+          nextId = 1 + Math.max(0, ...state.nodes.map(n=>parseInt(n.id.replace('n',''))||0));
+          return true;
+        }
+      }
+    }catch(e){ console.warn('load failed', e); }
+    return false;
+  }
+
+  function saveToStorage(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function initDefault(){
+    const rootId = uid();
+    state.nodes.push({id: rootId, x: 0, y: 0, text: 'Główny temat', color:'', isRoot:true});
+  }
+
+  if(!loadFromStorage()){
+    initDefault();
+  }
+
+  function applyTransform(){
+    world.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    zoomlabel.textContent = Math.round(scale*100) + '%';
+  }
+
+  function getNode(id){ return state.nodes.find(n=>n.id===id); }
+
+  function render(){
+    // Render nodes
+    nodesLayer.innerHTML = '';
+    state.nodes.forEach(n=>{
+      const el = document.createElement('div');
+      el.className = 'node' + (n.isRoot ? ' root' : '') + (n.id===selectedId ? ' selected' : '');
+      el.style.left = n.x + 'px';
+      el.style.top = n.y + 'px';
+      if(n.color && !n.isRoot) el.style.background = n.color;
+      el.textContent = n.text;
+      el.dataset.id = n.id;
+
+      const handle = document.createElement('div');
+      handle.className = 'handle';
+      el.appendChild(handle);
+
+      nodesLayer.appendChild(el);
+      // measure and store size for link calc
+      requestAnimationFrame(()=>{
+        n._w = el.offsetWidth;
+        n._h = el.offsetHeight;
+        drawLinks();
+      });
+
+      attachNodeEvents(el, n, handle);
+    });
+    drawLinks();
+    saveToStorage();
+  }
+
+  function drawLinks(){
+    svgLinks.innerHTML = '';
+    const NS = 'http://www.w3.org/2000/svg';
+    state.links.forEach(l=>{
+      const a = getNode(l.from), b = getNode(l.to);
+      if(!a || !b) return;
+      const aw = a._w || 100, ah = a._h || 40;
+      const bw = b._w || 100, bh = b._h || 40;
+      const ax = a.x + aw/2, ay = a.y + ah/2;
+      const bx = b.x + bw/2, by = b.y + bh/2;
+      const path = document.createElementNS(NS, 'path');
+      const dx = bx - ax;
+      const c1x = ax + dx*0.5, c1y = ay;
+      const c2x = ax + dx*0.5, c2y = by;
+      path.setAttribute('d', `M ${ax} ${ay} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${bx} ${by}`);
+      path.setAttribute('stroke', '#4a5064');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('fill', 'none');
+      svgLinks.appendChild(path);
+    });
+  }
+
+  // ---- Node interactions ----
+  let dragNode = null, dragOffsetX=0, dragOffsetY=0;
+  let linkingFrom = null;
+  let linkPreview = null;
+
+  function attachNodeEvents(el, n, handle){
+    el.addEventListener('mousedown', (e)=>{
+      if(e.target === handle) return;
+      if(el.getAttribute('contenteditable') === 'true') { e.stopPropagation(); return; }
+      e.stopPropagation();
+      selectNode(n.id);
+      dragNode = n;
+      const rect = wrap.getBoundingClientRect();
+      const wx = (e.clientX - rect.left - panX) / scale;
+      const wy = (e.clientY - rect.top - panY) / scale;
+      dragOffsetX = wx - n.x;
+      dragOffsetY = wy - n.y;
+    });
+
+    el.addEventListener('dblclick', (e)=>{
+      e.stopPropagation();
+      startEditing(el, n);
+    });
+
+    handle.addEventListener('mousedown', (e)=>{
+      e.stopPropagation();
+      linkingFrom = n.id;
+      const NS='http://www.w3.org/2000/svg';
+      linkPreview = document.createElementNS(NS,'path');
+      linkPreview.setAttribute('stroke', '#fadd10');
+      linkPreview.setAttribute('stroke-width','2');
+      linkPreview.setAttribute('fill','none');
+      linkPreview.setAttribute('stroke-dasharray','4,4');
+      svgLinks.appendChild(linkPreview);
+    });
+
+    el.addEventListener('mouseup', (e)=>{
+      if(linkingFrom && linkingFrom !== n.id){
+        e.stopPropagation();
+        const exists = state.links.some(l=>(l.from===linkingFrom&&l.to===n.id)||(l.from===n.id&&l.to===linkingFrom));
+        if(!exists){
+          state.links.push({from: linkingFrom, to: n.id});
+        }
+      }
+    });
+  }
+
+  function startEditing(el, n){
+    el.setAttribute('contenteditable', 'true');
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    function finish(){
+      el.removeAttribute('contenteditable');
+      n.text = el.textContent.trim() || 'Bez nazwy';
+      el.removeEventListener('blur', finish);
+      el.removeEventListener('keydown', keyHandler);
+      render();
+      selectNode(n.id);
+    }
+    function keyHandler(ev){
+      if(ev.key === 'Enter' && !ev.shiftKey){
+        ev.preventDefault();
+        el.blur();
+      } else if(ev.key === 'Tab'){
+        ev.preventDefault();
+        n.text = el.textContent.trim() || 'Bez nazwy';
+        el.removeEventListener('blur', finish);
+        el.removeEventListener('keydown', keyHandler);
+        el.removeAttribute('contenteditable');
+        addChildNode(n);
+      } else if(ev.key === 'Escape'){
+        el.blur();
+      }
+    }
+    el.addEventListener('blur', finish);
+    el.addEventListener('keydown', keyHandler);
+  }
+
+  function selectNode(id){
+    selectedId = id;
+    render();
+    updateSidePanel();
+  }
+
+  function updateSidePanel(){
+    const n = getNode(selectedId);
+    if(!n){ sidepanel.classList.remove('open'); return; }
+    sidepanel.classList.add('open');
+    panelText.value = n.text;
+    panelColor.value = n.color || (n.isRoot ? '#fadd10' : '#1c2130');
+  }
+
+  panelText.addEventListener('input', ()=>{
+    const n = getNode(selectedId);
+    if(!n) return;
+    n.text = panelText.value;
+    render();
+  });
+  panelColor.addEventListener('input', ()=>{
+    const n = getNode(selectedId);
+    if(!n || n.isRoot) return;
+    n.color = panelColor.value;
+    render();
+  });
+
+  function addChildNode(parent){
+    const id = uid();
+    const newNode = {
+      id, x: parent.x + (parent._w||120) + 60, y: parent.y + (Math.random()*60-30),
+      text: 'Nowa myśl', color: '', isRoot:false
+    };
+    state.nodes.push(newNode);
+    state.links.push({from: parent.id, to: id});
+    render();
+    selectNode(id);
+  }
+
+  document.getElementById('addNodeBtn').addEventListener('click', ()=>{
+    const rect = wrap.getBoundingClientRect();
+    const cx = (rect.width/2 - panX)/scale;
+    const cy = (rect.height/2 - panY)/scale;
+    const parent = getNode(selectedId);
+    if(parent){
+      addChildNode(parent);
+    } else {
+      const id = uid();
+      state.nodes.push({id, x: cx-60, y: cy-20, text:'Nowa myśl', color:'', isRoot:false});
+      render();
+      selectNode(id);
+    }
+  });
+
+  document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Delete' || e.key === 'Backspace'){
+      const active = document.activeElement;
+      if(active && (active.tagName === 'TEXTAREA' || active.getAttribute('contenteditable')==='true')) return;
+      if(selectedId) deleteSelected();
+    }
+  });
+
+  function deleteSelected(){
+    const n = getNode(selectedId);
+    if(!n) return;
+    if(n.isRoot){ alert('Nie można usunąć głównego węzła.'); return; }
+    state.nodes = state.nodes.filter(x=>x.id!==n.id);
+    state.links = state.links.filter(l=>l.from!==n.id && l.to!==n.id);
+    selectedId = null;
+    render();
+    updateSidePanel();
+  }
+
+  document.getElementById('colorPicker').addEventListener('input', (e)=>{
+    const n = getNode(selectedId);
+    if(n && !n.isRoot){ n.color = e.target.value; render(); }
+  });
+
+  // ---- Pan & zoom ----
+  let isPanning = false, panStartX=0, panStartY=0, panOrigX=0, panOrigY=0;
+
+  wrap.addEventListener('mousedown', (e)=>{
+    if(e.target !== wrap && e.target !== world && e.target !== svgLinks && e.target.id !== 'nodes-layer') return;
+    isPanning = true;
+    wrap.classList.add('panning');
+    panStartX = e.clientX; panStartY = e.clientY;
+    panOrigX = panX; panOrigY = panY;
+    selectedId = null;
+    render();
+    updateSidePanel();
+  });
+
+  window.addEventListener('mousemove', (e)=>{
+    if(dragNode){
+      const rect = wrap.getBoundingClientRect();
+      const wx = (e.clientX - rect.left - panX) / scale;
+      const wy = (e.clientY - rect.top - panY) / scale;
+      dragNode.x = wx - dragOffsetX;
+      dragNode.y = wy - dragOffsetY;
+      render();
+      return;
+    }
+    if(linkingFrom && linkPreview){
+      const a = getNode(linkingFrom);
+      const rect = wrap.getBoundingClientRect();
+      const wx = (e.clientX - rect.left - panX) / scale;
+      const wy = (e.clientY - rect.top - panY) / scale;
+      const ax = a.x + (a._w||60)/2, ay = a.y + (a._h||30)/2;
+      linkPreview.setAttribute('d', `M ${ax} ${ay} L ${wx} ${wy}`);
+      return;
+    }
+    if(isPanning){
+      panX = panOrigX + (e.clientX - panStartX);
+      panY = panOrigY + (e.clientY - panStartY);
+      applyTransform();
+    }
+  });
+
+  window.addEventListener('mouseup', ()=>{
+    if(dragNode){ dragNode = null; saveToStorage(); }
+    if(linkingFrom){
+      linkingFrom = null;
+      if(linkPreview){ linkPreview.remove(); linkPreview = null; }
+      render();
+    }
+    isPanning = false;
+    wrap.classList.remove('panning');
+  });
+
+  wrap.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const wx = (mx - panX)/scale, wy = (my - panY)/scale;
+    const delta = e.deltaY < 0 ? 1.1 : 0.9;
+    scale = Math.min(3, Math.max(0.2, scale*delta));
+    panX = mx - wx*scale;
+    panY = my - wy*scale;
+    applyTransform();
+  }, {passive:false});
+
+  document.getElementById('zoomInBtn').addEventListener('click', ()=>{
+    scale = Math.min(3, scale*1.15); applyTransform();
+  });
+  document.getElementById('zoomOutBtn').addEventListener('click', ()=>{
+    scale = Math.max(0.2, scale*0.87); applyTransform();
+  });
+  document.getElementById('fitBtn').addEventListener('click', fitToScreen);
+
+  function fitToScreen(){
+    if(!state.nodes.length) return;
+    const xs = state.nodes.map(n=>n.x), ys = state.nodes.map(n=>n.y);
+    const xe = state.nodes.map(n=>n.x + (n._w||140));
+    const ye = state.nodes.map(n=>n.y + (n._h||40));
+    const minX = Math.min(...xs)-40, maxX = Math.max(...xe)+40;
+    const minY = Math.min(...ys)-40, maxY = Math.max(...ye)+40;
+    const rect = wrap.getBoundingClientRect();
+    const w = maxX-minX, h = maxY-minY;
+    const s = Math.min(rect.width/w, rect.height/h, 1.5);
+    scale = Math.max(0.2, Math.min(3, s));
+    panX = -minX*scale + (rect.width - w*scale)/2;
+    panY = -minY*scale + (rect.height - h*scale)/2;
+    applyTransform();
+  }
+
+  // ---- Save / Load / Export ----
+  document.getElementById('saveBtn').addEventListener('click', ()=>{
+    const name = document.getElementById('filename-input').value.trim() || 'mapa-mysli';
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('loadBtn').addEventListener('click', ()=>{
+    document.getElementById('fileInput').click();
+  });
+  document.getElementById('fileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const parsed = JSON.parse(ev.target.result);
+        if(parsed.nodes){
+          state = parsed;
+          nextId = 1 + Math.max(0, ...state.nodes.map(n=>parseInt(n.id.replace('n',''))||0));
+          selectedId = null;
+          render();
+          fitToScreen();
+        }
+      }catch(err){ alert('Nieprawidłowy plik JSON.'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', ()=>{
+    if(!confirm('Na pewno wyczyścić całą mapę?')) return;
+    state = {nodes:[], links:[]};
+    nextId = 1;
+    initDefault();
+    selectedId = null;
+    render();
+    fitToScreen();
+  });
+
+  document.getElementById('exportPngBtn').addEventListener('click', exportPng);
+
+  function exportPng(){
+    // Build a temporary SVG snapshot of the whole map (nodes as foreignObject + links)
+    const xs = state.nodes.map(n=>n.x), ys = state.nodes.map(n=>n.y);
+    const xe = state.nodes.map(n=>n.x + (n._w||140));
+    const ye = state.nodes.map(n=>n.y + (n._h||40));
+    const minX = Math.min(...xs)-40, maxX = Math.max(...xe)+40;
+    const minY = Math.min(...ys)-40, maxY = Math.max(...ye)+40;
+    const w = maxX-minX, h = maxY-minY;
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS,'svg');
+    svg.setAttribute('xmlns', NS);
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const bg = document.createElementNS(NS,'rect');
+    bg.setAttribute('width','100%'); bg.setAttribute('height','100%');
+    bg.setAttribute('fill', '#0f1115');
+    svg.appendChild(bg);
+
+    state.links.forEach(l=>{
+      const a = getNode(l.from), b = getNode(l.to);
+      if(!a||!b) return;
+      const ax = a.x + (a._w||100)/2 - minX, ay = a.y + (a._h||40)/2 - minY;
+      const bx = b.x + (b._w||100)/2 - minX, by = b.y + (b._h||40)/2 - minY;
+      const dx = bx-ax;
+      const path = document.createElementNS(NS,'path');
+      path.setAttribute('d', `M ${ax} ${ay} C ${ax+dx*0.5} ${ay}, ${ax+dx*0.5} ${by}, ${bx} ${by}`);
+      path.setAttribute('stroke','#4a5064');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('fill','none');
+      svg.appendChild(path);
+    });
+
+    state.nodes.forEach(n=>{
+      const fw = n._w || 140, fh = n._h || 40;
+      const fo = document.createElementNS(NS,'foreignObject');
+      fo.setAttribute('x', n.x-minX);
+      fo.setAttribute('y', n.y-minY);
+      fo.setAttribute('width', fw);
+      fo.setAttribute('height', fh);
+      const div = document.createElement('div');
+      div.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
+      div.style.cssText = `
+        font-family: 'Segoe UI', sans-serif; font-size:14px; line-height:1.35;
+        padding:10px 16px; border-radius:10px; box-sizing:border-box;
+        white-space:pre-wrap; word-break:break-word; height:100%;
+        display:flex; align-items:center; justify-content:center; text-align:center;
+        border:2px solid ${n.isRoot ? '#fadd10' : '#3a4050'};
+        background:${n.isRoot ? '#fadd10' : (n.color||'#1c2130')};
+        color:${n.isRoot ? '#141414' : '#eef1f6'};
+        font-weight:${n.isRoot ? '700':'400'};
+      `;
+      div.textContent = n.text;
+      fo.appendChild(div);
+      svg.appendChild(fo);
+    });
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const img = new Image();
+    const svgBlob = new Blob([svgData], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      const scaleFactor = 2;
+      canvas.width = w*scaleFactor; canvas.height = h*scaleFactor;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scaleFactor, scaleFactor);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob)=>{
+        const a = document.createElement('a');
+        const name = document.getElementById('filename-input').value.trim() || 'mapa-mysli';
+        a.href = URL.createObjectURL(blob);
+        a.download = name + '.png';
+        a.click();
+      });
+    };
+    img.src = url;
+  }
+
+  // init
+  render();
+  setTimeout(fitToScreen, 60);
+  applyTransform();
+
+})();
+</script>
+</body>
+</html>
